@@ -13,6 +13,8 @@ interface Model {
     features: Record<string, Feature>;
 }
 
+
+
 const exampleModels: Model[] = [
     {
         "thingId": "olive.bins:bin001",
@@ -107,10 +109,13 @@ export function ModelsGrid() {
             height: '100vh',
             overflow: 'hidden',
             backgroundColor: '#eeeeeeff',
+            display: 'flex',
+            flexWrap: 'wrap',
+            flexDirection: 'row',
         }}>
-             {models.map((model, index) => (
-                <ModelCard key={index} {...model} />
-            ))}
+        {models.map((model, index) => (
+            <ModelCard key={model.thingId || index} modelData={model}/>
+        ))}
         </div>
     );
 }
