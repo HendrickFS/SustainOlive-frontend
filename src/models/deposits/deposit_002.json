@@ -1,0 +1,31 @@
+{
+    "thingId": "olive.deposits:deposit002",
+    "policyId": "olive.default:policy",
+    "features": {
+        "temperature": {
+            "properties": {
+                "value": 25
+            }
+        },
+        "humidity": {
+            "properties": {
+                "value": 50
+            }
+        },
+        "mq": {
+            "properties": {
+                "value": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            }
+        }
+    }
+}

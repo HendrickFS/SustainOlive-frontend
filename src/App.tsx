@@ -4,8 +4,9 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
-import {  Login } from './componentes/Login'
-import { Home } from './componentes/Home'
+import {  Login } from './pages/Login'
+import { Home } from './pages/Home'
+import { Models } from './pages/Models'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -15,6 +16,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/models" element={<Models />} />
       </Routes>
     </BrowserRouter>
   )
