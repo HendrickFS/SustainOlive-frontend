@@ -19,7 +19,7 @@ export function Models() {
                     width: '85%',
                     height: '100vh',
                     overflow: 'hidden',
-                    backgroundColor: '#eeeeeeff',
+                    backgroundColor: '#dfdfdfff',
                 }}>
                     <ModelsGrid />
                 </div>

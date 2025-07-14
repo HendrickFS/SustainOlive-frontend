@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { FaHome, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
 import { ImFileText2 } from "react-icons/im";
 
+import sustainoliveLogo from "../assets/pegada.png"
+import ipbLogo from "../assets/ipbLogo.png"
 
 export function Menu() {
     const navigate = useNavigate();
@@ -35,7 +37,8 @@ export function Menu() {
                 paddingTop: '30px',
                 boxShadow: '2px 0 5px rgba(0, 0, 0, 0.2)'
                 }}>
-                <h1 style={{
+                <img src={sustainoliveLogo} alt="Sustainolive Logo" style={{ width: "200px", marginBottom: "20px" }} />
+                {/* <h1 style={{
                     color: 'white',
                     textAlign: 'center',
                     fontSize: '24px',
@@ -43,13 +46,14 @@ export function Menu() {
                     fontWeight: 'bold'
                 }}>
                     SustainOlive
-                </h1>
+                </h1> */}
 
                 <h2 style={{
                     color: 'white',
                     textAlign: 'center',
                     fontSize: '18px',
-                    marginBottom: '30px'
+                    marginBottom: '30px',
+                    fontFamily: 'Inter, sans-serif',
                 }}>
                     Menu
                 </h2>
@@ -77,8 +81,9 @@ export function Menu() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px', // espaço entre ícone e texto
+                        gap: '8px',
                         fontSize: '18px',
+                        fontFamily: 'Inter, sans-serif',
                         }}
                         onMouseOver={(e) => {
                         if (!isActive) e.currentTarget.style.backgroundColor = '#3a3605';
@@ -93,6 +98,8 @@ export function Menu() {
                     );
                     })}
                 </ul>
+
+                <img src={ipbLogo} alt="IPB Logo" style={{ width: "200px", marginTop: 'auto', marginBottom: "20px" }} />
          </div>
     );
 

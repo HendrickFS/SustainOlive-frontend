@@ -88,6 +88,54 @@ const exampleModels: Model[] = [
                 }
             }
         }
+    },
+    {
+        "thingId": "olive.mills:mill001",
+        "policyId": "olive.default:policy",
+        "features": {
+            "temperature": {
+                "properties": {
+                    "value": 0
+                }
+            },
+            "waterQuantity": {
+                "properties": {
+                    "value": 0
+                }
+            }
+        }
+    },
+    {
+        "thingId": "olive.mixers:mixer001",
+        "policyId": "olive.default:policy",
+        "features": {
+            "temperature": {
+                "properties": {
+                    "value": 0
+                }
+            },
+            "humidity": {
+                "properties": {
+                    "value": 0
+                }
+            }
+        }
+    },
+    {
+        "thingId": "olive.decanters:decanter001",
+        "policyId": "olive.default:policy",
+        "features": {
+            "temperature": {
+                "properties": {
+                    "value": 0
+                }
+            },
+            "waterQuantity": {
+                "properties": {
+                    "value": 0
+                }
+            }
+        }
     }
 ]
 
@@ -108,7 +156,7 @@ export function ModelsGrid() {
             width: '85%',
             height: '100vh',
             overflow: 'hidden',
-            backgroundColor: '#eeeeeeff',
+            backgroundColor: '#dfdfdfff',
             display: 'flex',
             flexWrap: 'wrap',
             flexDirection: 'row',

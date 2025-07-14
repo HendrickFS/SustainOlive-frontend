@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
+import { Environment } from "@react-three/drei";
 import { Suspense } from "react";
 import { Group } from "three";
 
@@ -9,7 +11,7 @@ function ModelViewer({ url }: { url: string }) {
 
   try {
     const { scene } = useGLTF(url);
-    const clone = scene.clone(true);
+    const clonedScene = useMemo(() => clone(scene), [scene]);
 
     useFrame(() => {
       if (groupRef.current) {
@@ -19,7 +21,7 @@ function ModelViewer({ url }: { url: string }) {
 
     return (
       <group ref={groupRef}>
-        <primitive object={clone} scale={1} position={[-0.75, 0, 0]} />
+        <primitive object={clonedScene} scale={0.75} position={[0, 0, 0]} />
       </group>
     );
   } catch (err) {
@@ -54,47 +56,74 @@ interface ModelCardProps {
   modelData: Model;
 }
 
+const available3DModels = ['deposits'];
+
+function getModelPath(thingId: string): string {
+  const name = thingId.split(':')[0].split('.')[1];
+  if (available3DModels.includes(name)) {
+    return `/${name}/${name}.gltf`;
+  }
+  return "/questionMarkModel/scene.gltf"; // Default model path
+}
+
 export function ModelCard({ modelData }: ModelCardProps) {
     const [model, setModel] = useState(modelData);
 
     useGLTF.preload("/questionMarkModel/scene.gltf");
+    useGLTF.preload("/deposits/deposits.gltf");
     
 
     return (
         <div style={{
-            backgroundColor: '#3a350bff',
-            color: 'white',
+            backgroundColor: '#f0f0f0ff',
+            color: 'black',
             padding: '16px',
             borderRadius: '8px',
             boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
             width: '300px',
-            height: '400px',
+            height: '450px',
             margin: '16px',
         }}>
 
             <div style={{ width: '100%', height: '200px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            
             <Suspense fallback={<div>Carregando modelo...</div>}>
-                <Canvas camera={{ position: [0, 0, 3] } } style={{ width: '300px', height: '300px' }}>
-                <ambientLight />
+                <Canvas camera={{ position: [0, 0, 3] } } style={{ width: '200px', height: '200px' }} >
+                {/* <pointLight position={[5, 5, 5]} intensity={1} />
+                <pointLight position={[-5, 5, 5]} intensity={1} />
+                <pointLight position={[5, 5, -5]} intensity={1} />
+                <pointLight position={[-5, 5, -5]} intensity={1} />
+                <pointLight position={[0, 0, -5]} intensity={1} /> */}
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[5, 5, 5]} intensity={3} />
+                <directionalLight position={[-5, 5, -5]} intensity={3} />
+                <directionalLight position={[5, 5, -5]} intensity={3} />
+                <directionalLight position={[-5, 5, 5]} intensity={3} />
+                <directionalLight position={[0, 5, 0]} intensity={3} />
+                <directionalLight position={[0, -5, 0]} intensity={3} />
                 <OrbitControls />
-                <ModelViewer url="/questionMarkModel/scene.gltf" />
+                {modelData?.thingId && (
+                <ModelViewer url={getModelPath(modelData.thingId)}/>
+                )}
+                {/* <Environment files={"studio_small_09_4k.hdr"} background={false} /> */}
                 </Canvas>
             </Suspense>
             </div>
             
+            <div style={{height:'20px'}}></div>
             <div>
-                <h3>{capitalize(modelData.thingId.split(':')[1])}</h3>
-                <p style={{ fontSize: '12px', color: '#ccc' }}>
+                <h3 style={{fontFamily: 'Inter, sans-serif'}}>{capitalize(modelData.thingId.split(':')[1])}</h3>
+                {/* <p style={{ fontSize: '12px', color: '#ccc', fontFamily: 'Inter, sans-serif' }}>
                     Policy: {modelData.policyId}
-                </p>
+                </p> */}
                 <div style={{ height: '20px' }} />
-                <h3>Features:</h3>
+                <h3 style={{fontFamily: 'Inter, sans-serif'}}>Features:</h3>
                 <div style={{ height: '10px' }} />
 
                 <ul style={{ padding: 0, marginLeft: '20px' }}>
                     {Object.entries(modelData.features).map(([featureName, feature]) => (
                         <li key={featureName} style={{ marginBottom: '8px' }}>
-                            <strong>{capitalize(featureName)}</strong>
+                            <strong style={{fontFamily: 'Inter, sans-serif'}}>{capitalize(featureName)}</strong>
                         </li>
                     ))}
                 </ul>  

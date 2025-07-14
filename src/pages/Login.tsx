@@ -1,8 +1,12 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom";
+import "@fontsource/inter/600.css";
+
 
 import oliveOilImg from "../assets/azeite_app.png"
 import azeiteImg from "../assets/azeite.jpg"
+import sustainoliveLogo from "../assets/pegada.png"
+import ipbLogo from "../assets/ipbLogo.png"
 import { Home } from "./Home";
 
 export function Login() {
@@ -63,7 +67,9 @@ export function Login() {
                     height: "100%",
                     gap: "20px",
                 }}>
-                    <h2>Login</h2>
+                    <div style={{marginBottom: "auto"}}></div>
+                    <img src={sustainoliveLogo} alt="Sustainolive Logo" style={{ width: "300px", marginBottom: "20px"}} />
+                    <h2 style={{fontFamily: "Inter"}}>Login</h2>
                     <input
                         type="email"
                         placeholder="Email"
@@ -83,6 +89,7 @@ export function Login() {
                         style={{ padding: "10px 20px",backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer" }}>
                         Login
                     </button>
+                    <img src={ipbLogo} alt="IPB Logo" style={{ width: "300px", marginTop: "auto", marginBottom: "30px" }} />
                 </div>
             </div>
         </div>

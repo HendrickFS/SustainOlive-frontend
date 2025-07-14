@@ -18,7 +18,7 @@ export function Home() {
                 width: '85%',
                 height: '100vh',
                 overflow: 'hidden',
-                backgroundColor: '#eeeeeeff',
+                backgroundColor: '#dfdfdfff',
             }}>
                 <h1>Welcome to the home page</h1>
                 <p>This is the main content area.</p>
