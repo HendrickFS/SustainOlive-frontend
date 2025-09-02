@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaHome, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
-import { ImFileText2 } from "react-icons/im";
+import { ImDrive, ImFileText2, ImTable2, ImHistory } from "react-icons/im";
 
 import sustainoliveLogo from "../assets/pegada.png"
 import ipbLogo from "../assets/ipbLogo.png"
@@ -11,9 +11,12 @@ export function Menu() {
     const [activeItem, setActiveItem] = useState("Home");
     const menuItems = [
         { name: "Home", path: "/home", icon: <FaHome /> },
+        { name: "Data", path: "/models-data", icon: <ImTable2 /> },
+        { name: "Devices", path: "/devices", icon: <ImDrive /> },
         { name: "Models", path: "/models", icon: <ImFileText2 /> },
-        { name: "Profile", path: "/profile", icon: <FaUser /> },
-        { name: "Settings", path: "/settings", icon: <FaCog /> },
+        { name: "Events", path: "/all-events", icon: <ImHistory /> },
+        // { name: "Profile", path: "/profile", icon: <FaUser /> },
+        // { name: "Settings", path: "/settings", icon: <FaCog /> },
         { name: "Logout", path: "/", icon: <FaSignOutAlt /> }
     ];
     const handleItemClick = (item: string) => {
