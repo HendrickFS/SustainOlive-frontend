@@ -32,3 +32,9 @@ export function formatTimestamp(timestamp: string): string {
 
   return `${day}/${month}/${year} - ${hours}:${minutes}:${seconds}`;
 }
+
+export function getType(thingId: string): string {
+  const parts = thingId.split(":");
+  const name = parts[1];
+  return name.replace(/\d+$/, "");
+}

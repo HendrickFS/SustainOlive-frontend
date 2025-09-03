@@ -6,16 +6,17 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import type { Group } from "three";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { TextLabel } from "./TextLabel";
+import { getType } from "../utils/formatting";
 
 function capitalize(str: string): string {
   if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const available3DModels = ["deposits"];
+const available3DModels = ["deposit"];
 
 function getModelPath(thingId: string): string {
-  const name = thingId.split(":")[0].split(".")[1];
+  const name = getType(thingId);
   if (available3DModels.includes(name)) {
     return `/${name}/${name}.gltf`;
   }
@@ -63,7 +64,7 @@ interface Feature {
 
 export function ModelInfo({ thingId }: ModelInfoProps) {
   useGLTF.preload("/questionMarkModel/scene.gltf");
-  useGLTF.preload("/deposits/deposits.gltf");
+  useGLTF.preload("/deposits/deposit.gltf");
 
   const [modelType, setModelType] = React.useState(
     thingId?.split(":")[0].split(".")[1] || ""

@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { Group } from "three";
 import { deleteModel } from "../api/modelApi";
 import { useNavigate } from "react-router-dom";
+import { getType } from "../utils/formatting";
 
 function ModelViewer({ url }: { url: string }) {
   const groupRef = useRef<Group>(null);
@@ -59,10 +60,10 @@ interface ModelCardProps {
   onDelete: () => void;
 }
 
-const available3DModels = ['deposits'];
+const available3DModels = ['deposit'];
 
 function getModelPath(thingId: string): string {
-  const name = thingId.split(':')[0].split('.')[1];
+  const name = getType(thingId);
   if (available3DModels.includes(name)) {
     return `/${name}/${name}.gltf`;
   }
@@ -75,7 +76,7 @@ export function ModelCard({ modelData, onDelete }: ModelCardProps) {
     const [itemToDelete, setItemToDelete] = useState<string>("");
 
     useGLTF.preload("/questionMarkModel/scene.gltf");
-    useGLTF.preload("/deposits/deposits.gltf");
+    useGLTF.preload("/deposits/deposit.gltf");
 
     const confirmDelete = async () => {
         try {
