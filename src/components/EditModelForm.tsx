@@ -5,6 +5,7 @@ import { MdEdit, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Model } from "../api/modelApi";
 import { getModel, postModel, updateModel } from "../api/modelApi";
+import { getType } from "../utils/formatting";
 
 function capitalize(str: string): string {
   if (!str) return "";
@@ -36,7 +37,7 @@ export function EditModelForm() {
   const [model, setModel] = React.useState<Model | null>(null);
 
   const [modelType, setModelType] = React.useState(
-    thingId?.split(":")[0].split(".")[1] || ""
+    thingId ? getType(thingId) : ""
   );
   const [features, setFeatures] = React.useState<Feature[]>([]);
   const [newFeature, setNewFeature] = React.useState({
@@ -53,7 +54,7 @@ export function EditModelForm() {
     if (thingId) {
       getModel(thingId).then((model: Model) => {
         setModel(model);
-        setModelType(model.thingId.split(":")[0].split(".")[1]);
+        setModelType(getType(model.thingId));
         const featuresArray = Object.entries(model.features).map(
           ([featureName, featureData]: [string, any]) => ({
             name: featureName,

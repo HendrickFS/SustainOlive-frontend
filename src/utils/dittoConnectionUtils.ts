@@ -1,9 +1,11 @@
+import { getType } from "./formatting";
+
 export function createSourceConnectionPayload(
   thingId: string,
   features: string[]
 ) {
   const [namespace, id] = thingId.split(":");
-  const type = namespace.split(".")[1];
+  const type = getType(thingId);
 
   const featureMappings = features
     .map((f) => {
@@ -11,7 +13,7 @@ export function createSourceConnectionPayload(
     })
     .join(",");
 
-  const incomingScript = `function mapToDittoProtocolMsg(headers,textPayload,bytePayload,contentType){ const jsonString=String.fromCharCode.apply(null,new Uint8Array(bytePayload)); const jsonData=JSON.parse(jsonString); const thingId=(jsonData.thingId??'${thingId}').split(':'); const features=[${featureMappings}]; const messages=features.filter(f=>f.key in jsonData).map(f=>Ditto.buildDittoProtocolMsg(thingId[0],thingId[1],'things','twin','commands','modify', \`/features/\${f.name}/properties/value\`,headers,{properties:{value:jsonData[f.key]}})); return messages.length===1?messages[0]:messages; }`;
+  const incomingScript = `function mapToDittoProtocolMsg(headers,textPayload,bytePayload,contentType){ const jsonString=String.fromCharCode.apply(null,new Uint8Array(bytePayload)); const jsonData=JSON.parse(jsonString); const thingId=jsonData.thingId.split(':'); const features=[${featureMappings}]; const messages=features.filter(f=>f.key in jsonData).map(f=>Ditto.buildDittoProtocolMsg(thingId[0],thingId[1],'things','twin','commands','modify', \`/features/\${f.name}/properties/value\`,headers,{properties:{value:jsonData[f.key]}})); return messages.length===1?messages[0]:messages; }`;
 
   return {
     targetActorSelection: "/system/sharding/connection",
@@ -30,7 +32,7 @@ export function createSourceConnectionPayload(
         uri: "tcp://mosquitto:1884",
         sources: [
           {
-            addresses: [`${namespace}/incoming/#`],
+            addresses: [`${type}/incoming/#`],
             authorizationContext: ["nginx:ditto"],
             qos: 0,
             filters: [],
@@ -55,9 +57,8 @@ export function createTargetConnectionPayload(
   features: string[]
 ) {
   const [namespace, id] = thingId.split(":");
-  const type = namespace.split(".")[1];
+  const type = getType(thingId);
 
-  // Cria o trecho: '"temperature": ' + value.temperature.properties.value
   const featurePairs = features
     .map((f) => `"${f}":value.${f}.properties.value`)
     .join(", ");
@@ -81,7 +82,7 @@ export function createTargetConnectionPayload(
         uri: "tcp://mosquitto:9002",
         targets: [
           {
-            address: `${namespace}.notifications/{{ thing:id }}`,
+            address: `${type}.notifications/{{ thing:id }}`,
             topics: ["_/_/things/twin/events", "_/_/things/live/messages"],
             authorizationContext: ["ditto:observer"],
             qos: 0,

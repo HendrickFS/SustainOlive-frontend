@@ -4,6 +4,7 @@ import { NewModelCard } from "./NewModelCard";
 import { useNavigate } from "react-router-dom";
 import { getModels } from "../api/modelApi";
 import type { Model } from "../api/modelApi";
+import { getType } from "../utils/formatting";
 
 interface Feature {
     properties: {
@@ -46,7 +47,7 @@ export function ModelsGrid() {
 
     let modelTypes: string[] = [];
     for (const model of models) {
-        const type = model.thingId.split(':')[0].split('.')[1];
+        const type = getType(model.thingId);
         if (!modelTypes.includes(type)) {
             modelTypes.push(type);
         }

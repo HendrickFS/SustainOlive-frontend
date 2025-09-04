@@ -67,13 +67,13 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
   useGLTF.preload("/deposits/deposit.gltf");
 
   const [modelType, setModelType] = React.useState(
-    thingId?.split(":")[0].split(".")[1] || ""
+    getType(thingId) || ""
   );
   const [features, setFeatures] = React.useState<Feature[]>([]);
   useEffect(() => {
     if (thingId) {
       getModel(thingId).then((model: Model) => {
-        setModelType(model.thingId.split(":")[0].split(".")[1]);
+        setModelType(getType(model.thingId));
         const featuresArray = Object.entries(model.features).map(
           ([featureName, featureData]: [string, any]) => ({
             name: featureName,
@@ -137,7 +137,7 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
                 alignItems: "center",
               }}
             >
-              <Suspense fallback={<div>Carregando modelo...</div>}>
+              <Suspense fallback={<div>Loading model...</div>}>
                 <Canvas
                   camera={{ position: [0, 0, 3] }}
                   style={{ width: "400px", height: "400px" }}
@@ -165,9 +165,7 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
             }}
           >
             <h2 style={{ fontFamily: "Inter, sans-serif" }}>Thing ID:</h2>
-            <TextLabel
-              text={thingId}
-            />
+            <TextLabel text={thingId} />
             <h2 style={{ fontFamily: "Inter, sans-serif" }}>Features:</h2>
             <ul
               style={{
@@ -249,31 +247,31 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
           </p>
           <div style={{ height: "10px" }} />
           <h3 style={{ fontFamily: "Inter, sans-serif" }}>MQTT Port:</h3>
-          
-            <pre
-              style={{
-                backgroundColor: "#f5f5f5",
-                padding: "10px",
-                borderRadius: "5px",
-              }}
-            >
-              <code>1884</code>
-            </pre>
+
+          <pre
+            style={{
+              backgroundColor: "#f5f5f5",
+              padding: "10px",
+              borderRadius: "5px",
+            }}
+          >
+            <code>1884</code>
+          </pre>
           <div style={{ height: "10px" }} />
           <h3 style={{ fontFamily: "Inter, sans-serif" }}>MQTT Topic:</h3>
-         
-            <pre
-              style={{
-                backgroundColor: "#f5f5f5",
-                padding: "10px",
-                borderRadius: "5px",
-              }}
-            >
-              <code>
-                {thingId.split(":")[0]}/incoming/{thingId}
-              </code>
-            </pre>
-          
+
+          <pre
+            style={{
+              backgroundColor: "#f5f5f5",
+              padding: "10px",
+              borderRadius: "5px",
+            }}
+          >
+            <code>
+              {getType(thingId)}/incoming/{thingId}
+            </code>
+          </pre>
+
           <div style={{ height: "10px" }} />
           <h3 style={{ fontFamily: "Inter, sans-serif" }}>MQTT Payload:</h3>
           <p>

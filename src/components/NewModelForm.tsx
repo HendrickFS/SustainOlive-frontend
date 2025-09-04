@@ -48,7 +48,7 @@ export function NewModelForm({ type }: NewModelPageProps) {
 
   const handleSave = async () => {
     const model: Model = {
-      thingId: `olive.${modelType.toLowerCase().replace(/\s+/g, "-")}:${
+      thingId: `olive.production:${
         modelType.toLowerCase().replace(/\s+/g, "-") + "001"
       }`,
       policyId: "olive.default:policy", // Assuming policyId is not required for now
@@ -125,9 +125,7 @@ export function NewModelForm({ type }: NewModelPageProps) {
           <TextLabel text="ThingId:" />
           <p>
             {modelType
-              ? "olive." +
-                modelType.toLowerCase().replace(/\s+/g, "-") +
-                ":" +
+              ? "olive.production:" +
                 modelType.toLowerCase().replace(/\s+/g, "-") +
                 "001"
               : ""}
