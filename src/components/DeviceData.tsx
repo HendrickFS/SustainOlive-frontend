@@ -121,22 +121,22 @@ export function DeviceData({ thingId }: { thingId: string }) {
                 interval={10}
               />
               <YAxis
-                domain={[
-                  (dataMin: number) =>
-                    Math.min(
-                      dataMin,
-                      Number(
-                        0
-                      )
-                    ),
-                  (dataMax: number) =>
-                    Math.max(
-                      dataMax,
-                      Number(
-                        model?.features[feature]?.properties.maxValue ?? dataMax
-                      )
-                    ),
-                ]}
+                // domain={[
+                //   (dataMin: number) =>
+                //     Math.min(
+                //       dataMin,
+                //       Number(
+                //         0
+                //       )
+                //     ),
+                //   (dataMax: number) =>
+                //     Math.max(
+                //       dataMax,
+                //       Number(
+                //         model?.features[feature]?.properties.maxValue ?? dataMax
+                //       )
+                //     ),
+                // ]}
                 label={{
                   value: model?.features[feature]?.properties.unit || "",
                   position: "top",
