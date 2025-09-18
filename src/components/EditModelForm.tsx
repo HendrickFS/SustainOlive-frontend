@@ -5,14 +5,8 @@ import { MdEdit, MdDelete } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Model } from "../api/modelApi";
 import { getModel, postModel, updateModel } from "../api/modelApi";
-import { getType } from "../utils/formatting";
-
-function capitalize(str: string): string {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-const FeaturesTypes = ["Boolean", "Number", "String", "Date", "Array"];
+import { getType, capitalize } from "../utils/formatting";
+import { FeaturesTypes } from "../utils/dittoModelUtils";
 
 const DefaultFeatureValues: Record<string, any> = {
   Boolean: false,
@@ -42,7 +36,7 @@ export function EditModelForm() {
   const [features, setFeatures] = React.useState<Feature[]>([]);
   const [newFeature, setNewFeature] = React.useState({
     name: "",
-    type: "String",
+    type: FeaturesTypes[0],
     value: "",
     minValue: 0,
     maxValue: 0,

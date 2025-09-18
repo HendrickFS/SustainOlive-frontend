@@ -6,12 +6,11 @@ import { useNavigate } from "react-router-dom";
 import type { Model } from "../api/modelApi";
 import { postModel } from "../api/modelApi";
 import { div } from "three/tsl";
+import { defaultPolicyId, FeaturesTypes } from "../utils/dittoModelUtils";
 
 type NewModelPageProps = {
   type?: string;
 };
-
-const FeaturesTypes = ["Boolean", "Number", "String", "Date", "Array"];
 
 const DefaultFeatureValues: Record<string, any> = {
   Boolean: false,
@@ -36,7 +35,7 @@ export function NewModelForm({ type }: NewModelPageProps) {
   const [features, setFeatures] = React.useState<Feature[]>([]);
   const [newFeature, setNewFeature] = React.useState<Feature>({
     name: "",
-    type: "String",
+    type: FeaturesTypes[0],
     value: "",
     minValue: null,
     maxValue: null,
@@ -51,7 +50,7 @@ export function NewModelForm({ type }: NewModelPageProps) {
       thingId: `olive.production:${
         modelType.toLowerCase().replace(/\s+/g, "-") + "001"
       }`,
-      policyId: "olive.default:policy", // Assuming policyId is not required for now
+      policyId: defaultPolicyId,
       features: features.reduce((acc, feature) => {
         if (feature.type == "Number") {
           acc[feature.name] = {
