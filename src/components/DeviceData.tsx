@@ -171,6 +171,7 @@ export function DeviceData({ thingId }: { thingId: string }) {
                   });
                 }}
                 interval={10}
+                tick={false}
               />
               <YAxis
                 domain={[

@@ -33,7 +33,7 @@ export function NewModelCard({ modelTypes = [] }: { modelTypes?: string[] }) {
         padding: "16px",
         borderRadius: "8px",
         boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-        width: "300px",
+        width: "280px",
         height: "450px",
         margin: "16px",
         display: "flex",
