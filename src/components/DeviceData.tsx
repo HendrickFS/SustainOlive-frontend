@@ -256,15 +256,15 @@ export function DeviceData({ thingId }: { thingId: string }) {
                 const dataAlwaysBelowMin = actualDataMax < minThreshold;
                 const dataAlwaysAboveMax = actualDataMin > maxThreshold;
                 
-                // Extend domain to show threshold context when data is always critical
+                // Always ensure thresholds are visible when data is in critical zones
                 if (dataAlwaysBelowMin) {
-                  // Data always below minimum - show some of the safe zone above
-                  domainMax = Math.max(domainMax, minThreshold + (minThreshold - actualDataMin) * 0.3);
+                  // Data always below minimum - force include threshold with buffer
+                  domainMax = Math.max(domainMax, minThreshold + Math.abs(minThreshold - actualDataMax) * 0.1);
                 } else if (dataAlwaysAboveMax) {
-                  // Data always above maximum - show some of the safe zone below  
-                  domainMin = Math.min(domainMin, maxThreshold - (actualDataMax - maxThreshold) * 0.3);
+                  // Data always above maximum - force include threshold with buffer
+                  domainMin = Math.min(domainMin, maxThreshold - Math.abs(actualDataMin - maxThreshold) * 0.1);
                 } else {
-                  // Data crosses thresholds - extend domain slightly if thresholds are close
+                  // Data crosses or is near thresholds - extend domain if close
                   if (actualDataMin <= minThreshold + dataRange * 0.2) {
                     domainMin = Math.min(domainMin, minThreshold - Math.abs(minThreshold) * 0.05);
                   }
@@ -273,39 +273,76 @@ export function DeviceData({ thingId }: { thingId: string }) {
                   }
                 }
                 
-                return (
-                  <>
-                    {/* Green area: visible portion between thresholds (only if in domain) */}
-                    {domainMax > minThreshold && domainMin < maxThreshold && (
-                      <ReferenceArea
+                // Determine which zones to show based on data position
+                const areas = [];
+                
+                // If data is always below minimum threshold - show red background
+                if (dataAlwaysBelowMin) {
+                  areas.push(
+                    <ReferenceArea key="critical-low" y1={domainMin} y2={domainMax} fill="red" fillOpacity={0.1} />
+                  );
+                  // Show green zone boundary if threshold is visible
+                  if (domainMax > minThreshold) {
+                    areas.push(
+                      <ReferenceArea key="safe-indicator" y1={minThreshold} y2={domainMax} fill="green" fillOpacity={0.1} />
+                    );
+                  }
+                }
+                // If data is always above maximum threshold - show red background  
+                else if (dataAlwaysAboveMax) {
+                  areas.push(
+                    <ReferenceArea key="critical-high" y1={domainMin} y2={domainMax} fill="red" fillOpacity={0.1} />
+                  );
+                  // Show green zone boundary if threshold is visible
+                  if (domainMin < maxThreshold) {
+                    areas.push(
+                      <ReferenceArea key="safe-indicator" y1={domainMin} y2={maxThreshold} fill="green" fillOpacity={0.1} />
+                    );
+                  }
+                }
+                // Normal case - show zones based on thresholds
+                else {
+                  // Green zone between thresholds
+                  if (domainMax > minThreshold && domainMin < maxThreshold) {
+                    areas.push(
+                      <ReferenceArea 
+                        key="safe-zone"
                         y1={Math.max(minThreshold, domainMin)}
                         y2={Math.min(maxThreshold, domainMax)}
                         fill="green"
                         fillOpacity={0.1}
                       />
-                    )}
-                    
-                    {/* Red area above max threshold */}
-                    {domainMax > maxThreshold && (
-                      <ReferenceArea
+                    );
+                  }
+                  
+                  // Red zone above max
+                  if (domainMax > maxThreshold) {
+                    areas.push(
+                      <ReferenceArea 
+                        key="critical-high"
                         y1={Math.max(maxThreshold, domainMin)}
                         y2={domainMax}
                         fill="red"
                         fillOpacity={0.1}
                       />
-                    )}
-                    
-                    {/* Red area below min threshold */}
-                    {domainMin < minThreshold && (
-                      <ReferenceArea
+                    );
+                  }
+                  
+                  // Red zone below min
+                  if (domainMin < minThreshold) {
+                    areas.push(
+                      <ReferenceArea 
+                        key="critical-low"
                         y1={domainMin}
                         y2={Math.min(minThreshold, domainMax)}
                         fill="red"
                         fillOpacity={0.1}
                       />
-                    )}
-                  </>
-                );
+                    );
+                  }
+                }
+                
+                return <>{areas}</>;
               })()}
               <Tooltip />
               <CartesianGrid strokeDasharray="3 3" />
