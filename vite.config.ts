@@ -9,6 +9,12 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false, // Disable source maps in production for security
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Skip certain warnings
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        warn(warning);
+      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],

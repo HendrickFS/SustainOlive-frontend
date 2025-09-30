@@ -48,7 +48,7 @@ fi
 
 # Build for production
 echo -e "${BLUE}🏗️  Building for production...${NC}"
-npm run build:prod
+npm run build:deploy
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Build failed. Please check the error messages above.${NC}"

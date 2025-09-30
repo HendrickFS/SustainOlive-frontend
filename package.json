@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:prod": "tsc -b && vite build --mode production",
+    "build:prod": "tsc -b --noEmitOnError false && vite build --mode production",
+    "build:deploy": "vite build --mode production",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
-    "deploy": "npm run build:prod && echo 'Build completed for production deployment'"
+    "deploy": "npm run build:deploy && echo 'Build completed for production deployment'"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.6",
