@@ -189,19 +189,23 @@ export function DeviceData({ thingId }: { thingId: string }) {
                   const basePadding = Math.max(dataRange * 0.1, Math.abs(actualDataMax - actualDataMin) * 0.1);
                   const padding = dataRange < 0.01 ? 0.1 : basePadding;
                   
-                  // Calculate domain bounds
+                  // Calculate domain bounds focused on data
                   let domainMin = actualDataMin - padding;
                   let domainMax = actualDataMax + padding;
                   
-                  // Always include thresholds in domain to ensure reference areas are visible
+                  // Extend domain slightly if thresholds are very close to data range
                   if (minThreshold !== undefined) {
                     const bufferBelowMin = Math.abs(minThreshold) * 0.05;
-                    domainMin = Math.min(domainMin, minThreshold - bufferBelowMin);
+                    if (actualDataMin <= minThreshold + dataRange * 0.2) {
+                      domainMin = Math.min(domainMin, minThreshold - bufferBelowMin);
+                    }
                   }
                   
                   if (maxThreshold !== undefined) {
                     const bufferAboveMax = Math.abs(maxThreshold) * 0.05;
-                    domainMax = Math.max(domainMax, maxThreshold + bufferAboveMax);
+                    if (actualDataMax >= maxThreshold - dataRange * 0.2) {
+                      domainMax = Math.max(domainMax, maxThreshold + bufferAboveMax);
+                    }
                   }
                   
                   return [domainMin, domainMax];
@@ -230,28 +234,64 @@ export function DeviceData({ thingId }: { thingId: string }) {
                   dx: -10,
                 }}
               />
-              {/* Reference areas - always include thresholds in domain */}
-              {model?.features[feature]?.properties.minValue !== undefined && 
-               model?.features[feature]?.properties.maxValue !== undefined && (
-                <>
-                  <ReferenceArea
-                    y1={model.features[feature].properties.minValue}
-                    y2={model.features[feature].properties.maxValue}
-                    fill="green"
-                    fillOpacity={0.1}
-                  />
-                  <ReferenceArea
-                    y1={model.features[feature].properties.maxValue}
-                    fill="red"
-                    fillOpacity={0.1}
-                  />
-                  <ReferenceArea
-                    y2={model.features[feature].properties.minValue}
-                    fill="red"
-                    fillOpacity={0.1}
-                  />
-                </>
-              )}
+              {/* Smart reference areas that adapt to visible domain */}
+              {(() => {
+                const minThreshold = model?.features[feature]?.properties.minValue;
+                const maxThreshold = model?.features[feature]?.properties.maxValue;
+                
+                if (minThreshold === undefined || maxThreshold === undefined) return null;
+                
+                // Calculate current domain
+                const dataValues = entries.map(entry => entry.value);
+                const actualDataMin = Math.min(...dataValues);
+                const actualDataMax = Math.max(...dataValues);
+                const dataRange = actualDataMax - actualDataMin;
+                const basePadding = Math.max(dataRange * 0.1, Math.abs(actualDataMax - actualDataMin) * 0.1);
+                const padding = dataRange < 0.01 ? 0.1 : basePadding;
+                
+                let domainMin = actualDataMin - padding;
+                let domainMax = actualDataMax + padding;
+                
+                // Extend domain slightly if thresholds are very close
+                if (actualDataMin <= minThreshold + dataRange * 0.2) {
+                  domainMin = Math.min(domainMin, minThreshold - Math.abs(minThreshold) * 0.05);
+                }
+                if (actualDataMax >= maxThreshold - dataRange * 0.2) {
+                  domainMax = Math.max(domainMax, maxThreshold + Math.abs(maxThreshold) * 0.05);
+                }
+                
+                return (
+                  <>
+                    {/* Green area: visible portion between thresholds */}
+                    <ReferenceArea
+                      y1={Math.max(minThreshold, domainMin)}
+                      y2={Math.min(maxThreshold, domainMax)}
+                      fill="green"
+                      fillOpacity={0.1}
+                    />
+                    
+                    {/* Red area above max threshold (if visible) */}
+                    {domainMax > maxThreshold && (
+                      <ReferenceArea
+                        y1={maxThreshold}
+                        y2={domainMax}
+                        fill="red"
+                        fillOpacity={0.1}
+                      />
+                    )}
+                    
+                    {/* Red area below min threshold (if visible) */}
+                    {domainMin < minThreshold && (
+                      <ReferenceArea
+                        y1={domainMin}
+                        y2={minThreshold}
+                        fill="red"
+                        fillOpacity={0.1}
+                      />
+                    )}
+                  </>
+                );
+              })()}
               <Tooltip />
               <CartesianGrid strokeDasharray="3 3" />
               <Line type="monotone" dataKey="value" stroke="#8884d8" dot={false} />
