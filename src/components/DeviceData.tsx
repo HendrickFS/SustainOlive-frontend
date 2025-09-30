@@ -234,27 +234,34 @@ export function DeviceData({ thingId }: { thingId: string }) {
                   dx: -10,
                 }}
               />
-              {/* Only show reference areas if threshold values exist */}
+              {/* Show reference areas based on available threshold values */}
+              {/* Green area between min and max thresholds */}
               {model?.features[feature]?.properties.minValue !== undefined && 
                model?.features[feature]?.properties.maxValue !== undefined && (
-                <>
-                  <ReferenceArea
-                    y1={model.features[feature].properties.minValue}
-                    y2={model.features[feature].properties.maxValue}
-                    fill="green"
-                    fillOpacity={0.1}
-                  />
-                  <ReferenceArea
-                    y1={model.features[feature].properties.maxValue}
-                    fill="red"
-                    fillOpacity={0.1}
-                  />
-                  <ReferenceArea
-                    y2={model.features[feature].properties.minValue}
-                    fill="red"
-                    fillOpacity={0.1}
-                  />
-                </>
+                <ReferenceArea
+                  y1={model.features[feature].properties.minValue}
+                  y2={model.features[feature].properties.maxValue}
+                  fill="green"
+                  fillOpacity={0.1}
+                />
+              )}
+              
+              {/* Red area above max threshold */}
+              {model?.features[feature]?.properties.maxValue !== undefined && (
+                <ReferenceArea
+                  y1={model.features[feature].properties.maxValue}
+                  fill="red"
+                  fillOpacity={0.1}
+                />
+              )}
+              
+              {/* Red area below min threshold */}
+              {model?.features[feature]?.properties.minValue !== undefined && (
+                <ReferenceArea
+                  y2={model.features[feature].properties.minValue}
+                  fill="red"
+                  fillOpacity={0.1}
+                />
               )}
               <Tooltip />
               <CartesianGrid strokeDasharray="3 3" />
