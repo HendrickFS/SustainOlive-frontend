@@ -174,22 +174,42 @@ export function DeviceData({ thingId }: { thingId: string }) {
                 tick={false}
               />
               <YAxis
-                domain={[
-                  (dataMin: number) =>
-                    Math.min(
-                      dataMin,
-                      Number(
-                        0
-                      )
-                    ),
-                  (dataMax: number) =>
-                    Math.max(
-                      dataMax,
-                      Number(
-                        model?.features[feature]?.properties.maxValue ?? dataMax
-                      )
-                    ),
-                ]}
+                domain={(() => {
+                  // Get actual data values for dynamic range calculation
+                  const dataValues = entries.map(entry => entry.value);
+                  const actualDataMin = Math.min(...dataValues);
+                  const actualDataMax = Math.max(...dataValues);
+                  const dataRange = actualDataMax - actualDataMin;
+                  
+                  // Get threshold values
+                  const minThreshold = model?.features[feature]?.properties.minValue;
+                  const maxThreshold = model?.features[feature]?.properties.maxValue;
+                  
+                  // Calculate dynamic padding (minimum 10% of data range, or absolute value if range is small)
+                  const basePadding = Math.max(dataRange * 0.1, Math.abs(actualDataMax - actualDataMin) * 0.1);
+                  const padding = dataRange < 0.01 ? 0.1 : basePadding;
+                  
+                  // Calculate domain bounds
+                  let domainMin = actualDataMin - padding;
+                  let domainMax = actualDataMax + padding;
+                  
+                  // Extend domain to include thresholds if they're close to the data range
+                  if (minThreshold !== undefined) {
+                    const bufferBelowMin = Math.abs(minThreshold) * 0.05;
+                    if (actualDataMin <= minThreshold + dataRange * 0.2) {
+                      domainMin = Math.min(domainMin, minThreshold - bufferBelowMin);
+                    }
+                  }
+                  
+                  if (maxThreshold !== undefined) {
+                    const bufferAboveMax = Math.abs(maxThreshold) * 0.05;
+                    if (actualDataMax >= maxThreshold - dataRange * 0.2) {
+                      domainMax = Math.max(domainMax, maxThreshold + bufferAboveMax);
+                    }
+                  }
+                  
+                  return [domainMin, domainMax];
+                })()}
                 label={{
                   value: model?.features[feature]?.properties.unit || "",
                   position: "top",
