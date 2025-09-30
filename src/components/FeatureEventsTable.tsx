@@ -73,7 +73,8 @@ export function FeatureEventsTable({
       try {
         const historicalData = await getHistoricalData(
           model.thingId,
-          featureName
+          featureName,
+          "-7d"
         );
         setData(historicalData);
       } catch (error) {
