@@ -26,7 +26,7 @@ function useHistoricalData(model: Model, feature: string) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const historicalData = await getHistoricalData(model.thingId, feature);
+        const historicalData = await getHistoricalData(model.thingId, feature, "-7d");
         setData(historicalData);
       } catch (error) {
         console.error("Error fetching historical data:", error);
