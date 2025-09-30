@@ -23,4 +23,21 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment files
 .env
+.env.local
+.env.production
+.env.staging
+.env.development
+
+# Production builds backup
+dist_backup_*
+
+# PM2 logs and configs
+logs/
+*.pm2
+
+# SSL certificates
+*.key
+*.crt
+*.pem
