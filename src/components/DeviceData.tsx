@@ -252,39 +252,54 @@ export function DeviceData({ thingId }: { thingId: string }) {
                 let domainMin = actualDataMin - padding;
                 let domainMax = actualDataMax + padding;
                 
-                // Extend domain slightly if thresholds are very close
-                if (actualDataMin <= minThreshold + dataRange * 0.2) {
-                  domainMin = Math.min(domainMin, minThreshold - Math.abs(minThreshold) * 0.05);
-                }
-                if (actualDataMax >= maxThreshold - dataRange * 0.2) {
-                  domainMax = Math.max(domainMax, maxThreshold + Math.abs(maxThreshold) * 0.05);
+                // Check if data is always in critical zones
+                const dataAlwaysBelowMin = actualDataMax < minThreshold;
+                const dataAlwaysAboveMax = actualDataMin > maxThreshold;
+                
+                // Extend domain to show threshold context when data is always critical
+                if (dataAlwaysBelowMin) {
+                  // Data always below minimum - show some of the safe zone above
+                  domainMax = Math.max(domainMax, minThreshold + (minThreshold - actualDataMin) * 0.3);
+                } else if (dataAlwaysAboveMax) {
+                  // Data always above maximum - show some of the safe zone below  
+                  domainMin = Math.min(domainMin, maxThreshold - (actualDataMax - maxThreshold) * 0.3);
+                } else {
+                  // Data crosses thresholds - extend domain slightly if thresholds are close
+                  if (actualDataMin <= minThreshold + dataRange * 0.2) {
+                    domainMin = Math.min(domainMin, minThreshold - Math.abs(minThreshold) * 0.05);
+                  }
+                  if (actualDataMax >= maxThreshold - dataRange * 0.2) {
+                    domainMax = Math.max(domainMax, maxThreshold + Math.abs(maxThreshold) * 0.05);
+                  }
                 }
                 
                 return (
                   <>
-                    {/* Green area: visible portion between thresholds */}
-                    <ReferenceArea
-                      y1={Math.max(minThreshold, domainMin)}
-                      y2={Math.min(maxThreshold, domainMax)}
-                      fill="green"
-                      fillOpacity={0.1}
-                    />
+                    {/* Green area: visible portion between thresholds (only if in domain) */}
+                    {domainMax > minThreshold && domainMin < maxThreshold && (
+                      <ReferenceArea
+                        y1={Math.max(minThreshold, domainMin)}
+                        y2={Math.min(maxThreshold, domainMax)}
+                        fill="green"
+                        fillOpacity={0.1}
+                      />
+                    )}
                     
-                    {/* Red area above max threshold (if visible) */}
+                    {/* Red area above max threshold */}
                     {domainMax > maxThreshold && (
                       <ReferenceArea
-                        y1={maxThreshold}
+                        y1={Math.max(maxThreshold, domainMin)}
                         y2={domainMax}
                         fill="red"
                         fillOpacity={0.1}
                       />
                     )}
                     
-                    {/* Red area below min threshold (if visible) */}
+                    {/* Red area below min threshold */}
                     {domainMin < minThreshold && (
                       <ReferenceArea
                         y1={domainMin}
-                        y2={minThreshold}
+                        y2={Math.min(minThreshold, domainMax)}
                         fill="red"
                         fillOpacity={0.1}
                       />
