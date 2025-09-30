@@ -193,19 +193,15 @@ export function DeviceData({ thingId }: { thingId: string }) {
                   let domainMin = actualDataMin - padding;
                   let domainMax = actualDataMax + padding;
                   
-                  // Extend domain to include thresholds if they're close to the data range
+                  // Always include thresholds in domain to ensure reference areas are visible
                   if (minThreshold !== undefined) {
                     const bufferBelowMin = Math.abs(minThreshold) * 0.05;
-                    if (actualDataMin <= minThreshold + dataRange * 0.2) {
-                      domainMin = Math.min(domainMin, minThreshold - bufferBelowMin);
-                    }
+                    domainMin = Math.min(domainMin, minThreshold - bufferBelowMin);
                   }
                   
                   if (maxThreshold !== undefined) {
                     const bufferAboveMax = Math.abs(maxThreshold) * 0.05;
-                    if (actualDataMax >= maxThreshold - dataRange * 0.2) {
-                      domainMax = Math.max(domainMax, maxThreshold + bufferAboveMax);
-                    }
+                    domainMax = Math.max(domainMax, maxThreshold + bufferAboveMax);
                   }
                   
                   return [domainMin, domainMax];
@@ -234,25 +230,25 @@ export function DeviceData({ thingId }: { thingId: string }) {
                   dx: -10,
                 }}
               />
-              {/* Reference areas with higher opacity to ensure visibility */}
+              {/* Reference areas - always include thresholds in domain */}
               {model?.features[feature]?.properties.minValue !== undefined && 
                model?.features[feature]?.properties.maxValue !== undefined && (
                 <>
                   <ReferenceArea
                     y1={model.features[feature].properties.minValue}
                     y2={model.features[feature].properties.maxValue}
-                    fill="#00ff00"
-                    fillOpacity={0.2}
+                    fill="green"
+                    fillOpacity={0.1}
                   />
                   <ReferenceArea
                     y1={model.features[feature].properties.maxValue}
-                    fill="#ff0000"
-                    fillOpacity={0.2}
+                    fill="red"
+                    fillOpacity={0.1}
                   />
                   <ReferenceArea
                     y2={model.features[feature].properties.minValue}
-                    fill="#ff0000"
-                    fillOpacity={0.2}
+                    fill="red"
+                    fillOpacity={0.1}
                   />
                 </>
               )}
