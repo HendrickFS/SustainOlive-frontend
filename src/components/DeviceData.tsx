@@ -106,10 +106,10 @@ export function DeviceData({ thingId }: { thingId: string }) {
             <h2
               style={{ margin: "0 0 8px 0", fontSize: "20px", color: "#333" }}
             >
-              {formatName(thingId) == "Deposit 001" ? "Storage Tank 001" : formatName(thingId)}
+              {(formatName(thingId))}
             </h2>
             <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-              <strong>Thing ID:</strong> {formatName(thingId) == "Deposit 001" ? "olive.production:storage_tank001" : thingId}
+              <strong>Thing ID:</strong> {thingId}
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>

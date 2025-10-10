@@ -106,7 +106,7 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
       }}
     >
       <h1 style={{ fontFamily: "Inter, sans-serif" }}>
-        {capitalize(modelType) == "Deposit" ? "Storage Tank" : capitalize(modelType)} Model Information
+        {capitalize(modelType)} Model Information
       </h1>
       <div style={{ height: "40px" }} />
       <div
@@ -165,7 +165,7 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
             }}
           >
             <h2 style={{ fontFamily: "Inter, sans-serif" }}>Thing ID:</h2>
-            <TextLabel text={capitalize(modelType) == "Deposit" ? "olive.production:storage_tank001" : thingId} />
+            <TextLabel text={thingId} />
             <h2 style={{ fontFamily: "Inter, sans-serif" }}>Features:</h2>
             <ul
               style={{
@@ -268,7 +268,7 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
             }}
           >
             <code>
-              {getType(thingId)}/incoming/{capitalize(modelType) == "Deposit" ? "olive.production:storage_tank001" : thingId}
+              {getType(thingId)}/incoming/{thingId}
             </code>
           </pre>
 
