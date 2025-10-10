@@ -106,7 +106,7 @@ export function DeviceData({ thingId }: { thingId: string }) {
             <h2
               style={{ margin: "0 0 8px 0", fontSize: "20px", color: "#333" }}
             >
-              {formatName(thingId)}
+              {formatName(thingId) == "Deposit" ? "Storage Tank" : formatName(thingId)}
             </h2>
             <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
               <strong>Thing ID:</strong> {thingId}
