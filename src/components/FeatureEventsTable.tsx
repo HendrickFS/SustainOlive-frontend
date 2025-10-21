@@ -3,9 +3,12 @@ import type { Model } from "../api/modelApi";
 import { getHistoricalData } from "../api/historicalApi";
 import {
   formatFeatureName,
-  formatName,
   formatTimestamp,
 } from "../utils/formatting";
+import { Card, Table, Tag, Typography, Empty } from "antd";
+import type { ColumnsType } from "antd/es/table";
+
+const { Title } = Typography;
 
 interface HistoricalEntry {
   time: string;
@@ -18,6 +21,18 @@ interface Event {
   from: string;
   to: string;
   error?: boolean;
+}
+
+interface EventTableData {
+  key: number;
+  featureName: string;
+  value: string;
+  minValue: string;
+  maxValue: string;
+  event: string;
+  eventTime: string;
+  backgroundColor: string;
+  eventStatus: "Critical" | "Non-Critical";
 }
 
 function getEvents(
@@ -67,9 +82,11 @@ export function FeatureEventsTable({
   featureData: any;
 }) {
   const [data, setData] = useState<HistoricalEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const historicalData = await getHistoricalData(
           model.thingId,
@@ -79,6 +96,8 @@ export function FeatureEventsTable({
         setData(historicalData);
       } catch (error) {
         console.error("Error fetching historical data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -87,195 +106,136 @@ export function FeatureEventsTable({
 
   const events = getEvents(data, model, featureName);
 
+  const getTableColumns = (): ColumnsType<EventTableData> => [
+    {
+      title: "Feature",
+      dataIndex: "featureName",
+      key: "featureName",
+      width: "20%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Value",
+      dataIndex: "value",
+      key: "value",
+      width: "20%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Minimum Value",
+      dataIndex: "minValue",
+      key: "minValue",
+      width: "15%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Maximum Value",
+      dataIndex: "maxValue",
+      key: "maxValue",
+      width: "15%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Event",
+      dataIndex: "event",
+      key: "event",
+      width: "15%",
+      render: (event: string, record) => {
+        if (record.eventStatus === "Critical") {
+          return <Tag color="error">{event}</Tag>;
+        } else if (record.eventStatus === "Non-Critical") {
+          return <Tag color="success">{event}</Tag>;
+        }
+        return event;
+      },
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Event Time",
+      dataIndex: "eventTime",
+      key: "eventTime",
+      width: "15%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+  ];
+
+  const convertEventsToTableData = (): EventTableData[] => {
+    return events.map((event, index) => {
+      const backgroundColor =
+        event.to === "Non-Critical" ? "#d4edda" : "#f8d7da";
+      const eventStatus: "Critical" | "Non-Critical" =
+        event.to === "Non-Critical" ? "Non-Critical" : "Critical";
+
+      return {
+        key: index,
+        featureName: formatFeatureName(featureName),
+        value: !event.error
+          ? `${event.value}${featureData.properties?.unit || ""}`
+          : "-",
+        minValue:
+          featureData.properties?.minValue !== undefined
+            ? `${featureData.properties.minValue}${
+                featureData.properties?.unit
+                  ? " " + featureData.properties.unit
+                  : ""
+              }`
+            : "-",
+        maxValue:
+          featureData.properties?.maxValue !== undefined
+            ? `${featureData.properties.maxValue}${
+                featureData.properties?.unit
+                  ? " " + featureData.properties.unit
+                  : ""
+              }`
+            : "-",
+        event:
+          event.to === "Non-Critical"
+            ? "Becomes Non-Critical"
+            : "Becomes Critical",
+        eventTime: !event.error ? formatTimestamp(event.time) : "-",
+        backgroundColor,
+        eventStatus,
+      };
+    });
+  };
+
   return (
-   <div
-          key={featureName}
-          style={{
-            marginBottom: "24px",
-            width: "100%",
-            backgroundColor: "#f9f9f9",
-            border: "1px solid #eee",
-            borderRadius: "4px",
-            padding: "12px",
-          }}
-        >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "start",
-        }}
-      >
-        <h3 style={{ fontFamily: "Inter, sans-serif" }}>
+    <Card
+      title={
+        <Title level={5} style={{ margin: 0, fontFamily: "Inter, sans-serif" }}>
           {formatFeatureName(featureName)}
-        </h3>
-      </div>
-      
-      <table
-        style={{
-              borderCollapse: "collapse",
-              width: "100%",
-              marginTop: "8px",
-              fontFamily: "Arial, sans-serif",
-              tableLayout: "fixed",
-            }}
-      >
-        <thead>
-          <tr style={{ backgroundColor: "#f0f0f0" }}>
-            <th
-              style={{
-                padding: "8px",
-                border: "1px solid #ccc",
-                width: "20%",
-                textAlign: "left",
-              }}
-            >
-              Feature
-            </th>
-            <th
-              style={{
-                padding: "8px",
-                border: "1px solid #ccc",
-                width: "20%",
-                textAlign: "left",
-              }}
-            >
-              Value
-            </th>
-            <th
-              style={{
-                padding: "8px",
-                border: "1px solid #ccc",
-                width: "15%",
-                textAlign: "left",
-              }}
-            >
-              Minimum Value
-            </th>
-            <th
-              style={{
-                padding: "8px",
-                border: "1px solid #ccc",
-                width: "15%",
-                textAlign: "left",
-              }}
-            >
-              Maximum Value
-            </th>
-            <th
-              style={{
-                padding: "8px",
-                border: "1px solid #ccc",
-                width: "15%",
-                textAlign: "left",
-              }}
-            >
-              Event
-            </th>
-            <th
-              style={{
-                padding: "8px",
-                border: "1px solid #ccc",
-                width: "15%",
-                textAlign: "left",
-              }}
-            >
-              Event Time
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-        {events.length === 0 && (
-            <tr>
-              <td colSpan={6} style={{ padding: "8px", textAlign: "center" }}>
-                No events found for {formatFeatureName(featureName)}.
-              </td>
-            </tr>
-          )}
-          {events.map((event, index) => (
-            <tr key={index}>
-              <td
-                style={{
-                  padding: "8px",
-                  border: "1px solid #ccc",
-                  backgroundColor:
-                    event.to == "Non-Critical" ? "#d4edda" : "#f8d7da",
-                }}
-              >
-                {formatFeatureName(featureName)}
-              </td>
-              <td
-                style={{
-                  padding: "8px",
-                  border: "1px solid #ccc",
-                  backgroundColor:
-                    event.to == "Non-Critical" ? "#d4edda" : "#f8d7da",
-                }}
-              >
-                {!event.error
-                  ? `${event.value}${featureData.properties.unit}`
-                  : "-"}
-              </td>
-              <td
-                style={{
-                  padding: "8px",
-                  border: "1px solid #ccc",
-                  backgroundColor:
-                    event.to == "Non-Critical" ? "#d4edda" : "#f8d7da",
-                }}
-              >
-                {featureData.properties?.minValue !== undefined
-                  ? `${featureData.properties.minValue}${
-                      featureData.properties?.unit
-                        ? " " + featureData.properties.unit
-                        : ""
-                    }`
-                  : "-"}
-              </td>
-              <td
-                style={{
-                  padding: "8px",
-                  border: "1px solid #ccc",
-                  backgroundColor:
-                    event.to == "Non-Critical" ? "#d4edda" : "#f8d7da",
-                }}
-              >
-                {featureData.properties?.maxValue !== undefined
-                  ? `${featureData.properties.maxValue}${
-                      featureData.properties?.unit
-                        ? " " + featureData.properties.unit
-                        : ""
-                    }`
-                  : "-"}
-              </td>
-              <td
-                style={{
-                  padding: "8px",
-                  border: "1px solid #ccc",
-                  backgroundColor:
-                    event.to == "Non-Critical" ? "#d4edda" : "#f8d7da",
-                }}
-              >
-                {event.to == "Non-Critical"
-                  ? "Becomes Non-Critical"
-                  : event.to == "Critical"
-                  ? "Becomes Critical"
-                  : "-"}
-              </td>
-              <td
-                style={{
-                  padding: "8px",
-                  border: "1px solid #ccc",
-                  backgroundColor:
-                    event.to == "Non-Critical" ? "#d4edda" : "#f8d7da",
-                }}
-              >
-                {!event.error ? formatTimestamp(event.time) : "-"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        </Title>
+      }
+    >
+      <Table
+        columns={getTableColumns()}
+        dataSource={convertEventsToTableData()}
+        loading={loading}
+        pagination={false}
+        size="small"
+        bordered
+        locale={{
+          emptyText: (
+            <Empty
+              description={`No events found for ${formatFeatureName(
+                featureName
+              )}`}
+            />
+          ),
+        }}
+      />
+    </Card>
   );
 }

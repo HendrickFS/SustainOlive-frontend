@@ -7,15 +7,15 @@ import {
   formatTimestamp,
 } from "../utils/formatting";
 import { useNavigate } from "react-router-dom";
-import { FeatureEventRow } from "./FeatureEventRow";
+import { Card, Button, Table, Tag, Space, Typography } from "antd";
+import { EyeOutlined } from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
+
+const { Title } = Typography;
 
 interface HistoricalEntry {
   time: string;
   value: number;
-}
-
-interface HistoricalData {
-  [feature: string]: HistoricalEntry[];
 }
 
 interface Event {
@@ -26,23 +26,28 @@ interface Event {
   error?: boolean;
 }
 
-function useHistoricalData(model: Model, feature: string) {
-  const [data, setData] = useState<HistoricalEntry[]>([]);
+interface FeatureEventData {
+  featureName: string;
+  value: string;
+  minValue: string;
+  maxValue: string;
+  event: string;
+  eventTime: string;
+  backgroundColor: string;
+  eventStatus: "Critical" | "Non-Critical" | "Unknown";
+}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const historicalData = await getHistoricalData(model.thingId, feature);
-        setData(historicalData);
-      } catch (error) {
-        console.error("Error fetching historical data:", error);
-      }
-    };
-
-    fetchData();
-  }, [model, feature]);
-
-  return data;
+async function fetchHistoricalData(
+  model: Model,
+  feature: string
+): Promise<HistoricalEntry[]> {
+  try {
+    const historicalData = await getHistoricalData(model.thingId, feature, "-7d");
+    return historicalData;
+  } catch (error) {
+    console.error("Error fetching historical data:", error);
+    return [];
+  }
 }
 
 function getLastEvent(
@@ -75,10 +80,10 @@ function getLastEvent(
 
     if (auxStatus !== status) {
       return {
-        time: data[i].time,
-        value: data[i].value,
-        from: status,
-        to: auxStatus,
+        time: data[i + 1].time,
+        value: data[i + 1].value,
+        from: auxStatus,
+        to: status,
       };
     }
     status = auxStatus;
@@ -93,155 +98,192 @@ function getLastEvent(
 }
 
 export function AllEventsList() {
-  const [data, setData] = useState<Model[]>([]);
   const [models, setModels] = useState<Model[]>([]);
+  const [modelEvents, setModelEvents] = useState<
+    Record<string, FeatureEventData[]>
+  >({});
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchModels = async () => {
-      const models = await getModels();
-      setModels(models);
+    const fetchModelsAndEvents = async () => {
+      setLoading(true);
+      const fetchedModels = await getModels();
+      setModels(fetchedModels);
+
+      // Fetch events for all models
+      const eventsMap: Record<string, FeatureEventData[]> = {};
+      
+      for (const model of fetchedModels) {
+        const featureEvents: FeatureEventData[] = [];
+        
+        for (const [featureName, featureData] of Object.entries(model.features)) {
+          const historicalData = await fetchHistoricalData(model, featureName);
+          const event = getLastEvent(historicalData, model, featureName);
+          
+          const backgroundColor = !event.error
+            ? event.to === "Critical"
+              ? "#f8d7da"
+              : "#d4edda"
+            : "#fff";
+
+          const eventStatus: "Critical" | "Non-Critical" | "Unknown" = !event.error
+            ? event.to === "Critical"
+              ? "Critical"
+              : "Non-Critical"
+            : "Unknown";
+
+          featureEvents.push({
+            featureName: formatFeatureName(featureName),
+            value: !event.error
+              ? `${event.value}${(featureData as any).properties?.unit || ""}`
+              : "-",
+            minValue:
+              (featureData as any).properties?.minValue !== undefined
+                ? `${(featureData as any).properties.minValue}${
+                    (featureData as any).properties?.unit
+                      ? " " + (featureData as any).properties.unit
+                      : ""
+                  }`
+                : "-",
+            maxValue:
+              (featureData as any).properties?.maxValue !== undefined
+                ? `${(featureData as any).properties.maxValue}${
+                    (featureData as any).properties?.unit
+                      ? " " + (featureData as any).properties.unit
+                      : ""
+                  }`
+                : "-",
+            event:
+              backgroundColor === "#d4edda"
+                ? "Becomes Non-Critical"
+                : backgroundColor === "#f8d7da"
+                ? "Becomes Critical"
+                : "-",
+            eventTime: !event.error ? formatTimestamp(event.time) : "-",
+            backgroundColor,
+            eventStatus,
+          });
+        }
+        
+        eventsMap[model.thingId] = featureEvents;
+      }
+      
+      setModelEvents(eventsMap);
+      setLoading(false);
     };
-    fetchModels();
+
+    fetchModelsAndEvents();
   }, []);
+
+  const getTableColumns = (): ColumnsType<FeatureEventData> => [
+    {
+      title: "Feature",
+      dataIndex: "featureName",
+      key: "featureName",
+      width: "20%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Value",
+      dataIndex: "value",
+      key: "value",
+      width: "20%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Minimum Value",
+      dataIndex: "minValue",
+      key: "minValue",
+      width: "15%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Maximum Value",
+      dataIndex: "maxValue",
+      key: "maxValue",
+      width: "15%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Event",
+      dataIndex: "event",
+      key: "event",
+      width: "15%",
+      render: (event: string, record) => {
+        if (record.eventStatus === "Critical") {
+          return <Tag color="error">{event}</Tag>;
+        } else if (record.eventStatus === "Non-Critical") {
+          return <Tag color="success">{event}</Tag>;
+        }
+        return event;
+      },
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Event Time",
+      dataIndex: "eventTime",
+      key: "eventTime",
+      width: "15%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+  ];
 
   return (
     <div
       style={{
-        padding: "16px",
-        maxWidth: "100%",
+        width: "100%",
         height: "100vh",
         overflowY: "auto",
-        margin: "0 auto",
-        fontFamily: "Arial, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "start",
+        padding: "24px",
       }}
     >
-      {models.map((model) => (
-        <div
-          style={{
-            backgroundColor: "#fff",
-            padding: "16px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-            margin: "16px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        {models.map((model) => (
+          <Card
+            key={model.thingId}
+            title={
+              <Title level={4} style={{ margin: 0, fontFamily: "Inter, sans-serif" }}>
+                {formatName(model.thingId)}
+              </Title>
+            }
+            extra={
+              <Button
+                type="default"
+                icon={<EyeOutlined />}
+                onClick={() => navigate(`/device-events/${model.thingId}`)}
+                style={{ color: "#2196F3", borderColor: "#2196F3" }}
+              >
+                View Device Events
+              </Button>
+            }
+            loading={loading}
           >
-            <h3 style={{ fontFamily: "Inter, sans-serif" }}>
-              {formatName(model.thingId)}
-            </h3>
-            <button
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#fff",
-                color: "#2196F3",
-                border: "1px solid #2196F3",
-                borderRadius: "5px",
-                cursor: "pointer",
-              }}
-              onClick={() => navigate(`/device-events/${model.thingId}`)}
-            >
-              View Device Events
-            </button>
-          </div>
-          <table
-            style={{
-              borderCollapse: "collapse",
-              width: "100%",
-              marginTop: "8px",
-              fontFamily: "Arial, sans-serif",
-              tableLayout: "fixed",
-            }}
-          >
-            <thead>
-              <tr style={{ backgroundColor: "#f0f0f0" }}>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "20%",
-                    textAlign: "left",
-                  }}
-                >
-                  Feature
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "20%",
-                    textAlign: "left",
-                  }}
-                >
-                  Value
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "15%",
-                    textAlign: "left",
-                  }}
-                >
-                  Minimum Value
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "15%",
-                    textAlign: "left",
-                  }}
-                >
-                  Maximum Value
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "15%",
-                    textAlign: "left",
-                  }}
-                >
-                  Event
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "15%",
-                    textAlign: "left",
-                  }}
-                >
-                  Event Time
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(model.features).map(([name, featureData]) => (
-                <FeatureEventRow
-                  key={name}
-                  model={model}
-                  featureName={name}
-                  featureData={featureData}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+            <Table
+              columns={getTableColumns()}
+              dataSource={modelEvents[model.thingId] || []}
+              rowKey="featureName"
+              pagination={false}
+              size="small"
+              bordered
+              loading={loading}
+            />
+          </Card>
+        ))}
+      </Space>
     </div>
   );
 }

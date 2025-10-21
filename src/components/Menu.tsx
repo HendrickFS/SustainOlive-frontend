@@ -1,111 +1,124 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaHome, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
-import { ImDrive, ImFileText2, ImTable2, ImHistory } from "react-icons/im";
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Layout, Menu as AntMenu } from "antd";
+import {
+  HomeOutlined,
+  TableOutlined,
+  HddOutlined,
+  FileTextOutlined,
+  HistoryOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
+import type { MenuProps } from "antd";
 
-import sustainoliveLogo from "../assets/pegada.png"
-import ipbLogo from "../assets/ipbLogo.png"
+import sustainoliveLogo from "../assets/pegada.png";
+import ipbLogo from "../assets/ipbLogo.png";
+import "./Menu.css";
+
+const { Sider } = Layout;
+
+type MenuItem = Required<MenuProps>["items"][number];
 
 export function Menu() {
-    const navigate = useNavigate();
-    const [activeItem, setActiveItem] = useState("Home");
-    const menuItems = [
-        { name: "Home", path: "/home", icon: <FaHome /> },
-        { name: "Data", path: "/models-data", icon: <ImTable2 /> },
-        { name: "Devices", path: "/devices", icon: <ImDrive /> },
-        { name: "Models", path: "/models", icon: <ImFileText2 /> },
-        { name: "Events", path: "/all-events", icon: <ImHistory /> },
-        // { name: "Profile", path: "/profile", icon: <FaUser /> },
-        // { name: "Settings", path: "/settings", icon: <FaCog /> },
-        { name: "Logout", path: "/", icon: <FaSignOutAlt /> }
-    ];
-    const handleItemClick = (item: string) => {
-        setActiveItem(item);
-        if (item === 'Logout') {
-            navigate("/");
-        } else {
-            navigate(`/${item.toLowerCase()}`);
-        }
-    };
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    return (
-        <div style={{
-                width: '15%',
-                height: '100vh',
-                overflow: 'hidden',
-                backgroundColor: '#2C2803',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                paddingTop: '30px',
-                boxShadow: '2px 0 5px rgba(0, 0, 0, 0.2)'
-                }}>
-                <img src={sustainoliveLogo} alt="Sustainolive Logo" style={{ width: "200px", marginBottom: "20px" }} />
-                {/* <h1 style={{
-                    color: 'white',
-                    textAlign: 'center',
-                    fontSize: '24px',
-                    marginBottom: '10px',
-                    fontWeight: 'bold'
-                }}>
-                    SustainOlive
-                </h1> */}
+  const menuItems: MenuItem[] = [
+    {
+      key: "/home",
+      icon: <HomeOutlined />,
+      label: "Home",
+    },
+    {
+      key: "/models-data",
+      icon: <TableOutlined />,
+      label: "Data",
+    },
+    {
+      key: "/devices",
+      icon: <HddOutlined />,
+      label: "Devices",
+    },
+    {
+      key: "/models",
+      icon: <FileTextOutlined />,
+      label: "Models",
+    },
+    {
+      key: "/all-events",
+      icon: <HistoryOutlined />,
+      label: "Events",
+    },
+    {
+      key: "/",
+      icon: <LogoutOutlined />,
+      label: "Logout",
+    },
+  ];
 
-                <h2 style={{
-                    color: 'white',
-                    textAlign: 'center',
-                    fontSize: '18px',
-                    marginBottom: '30px',
-                    fontFamily: 'Inter, sans-serif',
-                }}>
-                    Menu
-                </h2>
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    navigate(e.key);
+  };
 
-                <ul style={{
-                    listStyleType: 'none',
-                    padding: 0,
-                    width: '100%'
-                }}>
-                    {menuItems.map(({ name, path, icon }) => {
-                    const isActive = location.pathname === path;
-                    return (
-                    <li
-                        key={name}
-                        onClick={() => navigate(path)}
-                        style={{
-                        color: 'white',
-                        textAlign: 'center',
-                        padding: '12px 0',
-                        cursor: 'pointer',
-                        backgroundColor: isActive ? '#3a3605' : 'transparent',
-                        fontWeight: isActive ? 'bold' : 'normal',
-                        borderLeft: isActive ? '4px solid white' : '4px solid transparent',
-                        transition: 'background 0.3s, border-left 0.3s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        fontSize: '18px',
-                        fontFamily: 'Inter, sans-serif',
-                        }}
-                        onMouseOver={(e) => {
-                        if (!isActive) e.currentTarget.style.backgroundColor = '#3a3605';
-                        }}
-                        onMouseOut={(e) => {
-                        if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                    >
-                        {icon}
-                        <span>{name}</span>
-                    </li>
-                    );
-                    })}
-                </ul>
+  return (
+    <Sider
+      width="15%"
+      style={{
+        height: "100vh",
+        backgroundColor: "#2C2803",
+        boxShadow: "2px 0 5px rgba(0, 0, 0, 0.2)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          alignItems: "center",
+          paddingTop: "30px",
+        }}
+      >
+        <img
+          src={sustainoliveLogo}
+          alt="Sustainolive Logo"
+          style={{ width: "200px", marginBottom: "20px" }}
+        />
 
-                <img src={ipbLogo} alt="IPB Logo" style={{ width: "200px", marginTop: 'auto', marginBottom: "20px" }} />
-         </div>
-    );
+        <h2
+          style={{
+            color: "white",
+            textAlign: "center",
+            fontSize: "18px",
+            marginBottom: "30px",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          Menu
+        </h2>
 
+        <AntMenu
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          onClick={handleMenuClick}
+          items={menuItems}
+          style={{
+            backgroundColor: "transparent",
+            border: "none",
+            color: "white",
+            width: "100%",
+            fontSize: "18px",
+            fontFamily: "Inter, sans-serif",
+          }}
+          theme="dark"
+        />
 
+        <img
+          src={ipbLogo}
+          alt="IPB Logo"
+          style={{ width: "200px", marginTop: "auto", marginBottom: "20px" }}
+        />
+      </div>
+    </Sider>
+  );
 }
 

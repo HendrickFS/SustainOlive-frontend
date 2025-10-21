@@ -1,12 +1,33 @@
-import React, { use, useEffect } from "react";
-import { TextLabel } from "./TextLabel";
-import { CustomTextField } from "./CustomTextField";
-import { MdEdit, MdDelete } from "react-icons/md";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Model } from "../api/modelApi";
-import { getModel, postModel, updateModel } from "../api/modelApi";
+import { getModel, updateModel } from "../api/modelApi";
 import { getType, capitalize } from "../utils/formatting";
 import { FeaturesTypes } from "../utils/dittoModelUtils";
+import {
+  Alert,
+  Button,
+  Card,
+  Divider,
+  Empty,
+  Form,
+  Input,
+  InputNumber,
+  List,
+  Select,
+  Space,
+  Tag,
+  Typography,
+  Popconfirm,
+  message,
+  Spin,
+} from "antd";
+import {
+  DeleteOutlined,
+  PlusOutlined,
+  SaveOutlined,
+  ArrowLeftOutlined,
+} from "@ant-design/icons";
 
 const DefaultFeatureValues: Record<string, any> = {
   Boolean: false,
@@ -28,13 +49,15 @@ interface Feature {
 
 export function EditModelForm() {
   const { thingId } = useParams<{ thingId: string }>();
-  const [model, setModel] = React.useState<Model | null>(null);
+  const navigate = useNavigate();
 
-  const [modelType, setModelType] = React.useState(
-    thingId ? getType(thingId) : ""
-  );
-  const [features, setFeatures] = React.useState<Feature[]>([]);
-  const [newFeature, setNewFeature] = React.useState({
+  const [model, setModel] = useState<Model | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+
+  const [modelType, setModelType] = useState<string>(thingId ? getType(thingId) : "");
+  const [features, setFeatures] = useState<Feature[]>([]);
+  const [newFeature, setNewFeature] = useState<Feature>({
     name: "",
     type: FeaturesTypes[0],
     value: "",
@@ -45,42 +68,78 @@ export function EditModelForm() {
   });
 
   useEffect(() => {
-    if (thingId) {
-      getModel(thingId).then((model: Model) => {
-        setModel(model);
-        setModelType(getType(model.thingId));
-        const featuresArray = Object.entries(model.features).map(
-          ([featureName, featureData]: [string, any]) => ({
-            name: featureName,
-            type:
-              capitalize(typeof featureData.properties.value) === "Object" &&
-              Array.isArray(featureData.properties.value)
-                ? "Array"
-                : capitalize(typeof featureData.properties.value),
-            value:
-              featureData.properties.value ??
-              DefaultFeatureValues[typeof featureData.properties.value],
-            minValue: featureData.properties.minValue ?? null,
-            maxValue: featureData.properties.maxValue ?? null,
-            unit: featureData.properties.unit ?? "",
-            timestamp:
-              featureData.properties.timestamp ?? new Date().toISOString(),
-          })
+    const load = async () => {
+      if (!thingId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const m = await getModel(thingId);
+        setModel(m);
+        setModelType(getType(m.thingId));
+        const featuresArray: Feature[] = Object.entries(m.features).map(
+          ([featureName, featureData]: [string, any]) => {
+            const rawVal = featureData?.properties?.value;
+            const isArrayVal = Array.isArray(rawVal);
+            const valueType = isArrayVal ? "Array" : capitalize(typeof rawVal);
+            return {
+              name: featureName,
+              type: valueType,
+              value: rawVal ?? DefaultFeatureValues[typeof rawVal],
+              minValue: featureData?.properties?.minValue ?? null,
+              maxValue: featureData?.properties?.maxValue ?? null,
+              unit: featureData?.properties?.unit ?? "",
+              timestamp: featureData?.properties?.timestamp ?? new Date().toISOString(),
+            } as Feature;
+          }
         );
-
         setFeatures(featuresArray);
-      });
-    }
+      } catch (err) {
+        console.error("Failed to load model", err);
+        message.error("Failed to load model data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [thingId]);
 
-  const navigate = useNavigate();
+  const handleAddFeature = () => {
+    if (!newFeature.name.trim()) {
+      message.warning("Please provide a feature name");
+      return;
+    }
+    setFeatures((prev) => [...prev, newFeature]);
+    setNewFeature({
+      name: "",
+      type: FeaturesTypes[0],
+      value: "",
+      minValue: 0,
+      maxValue: 0,
+      unit: "",
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    setFeatures((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSave = async () => {
+    if (!thingId) {
+      message.error("Missing thingId");
+      return;
+    }
+    if (!model) {
+      message.error("Model not loaded yet");
+      return;
+    }
+    setSaving(true);
     const newModel: Model = {
-      thingId: thingId || "",
-      policyId: "olive.default:policy", // Assuming policyId is not required for now
+      thingId,
+      policyId: "olive.default:policy",
       features: features.reduce((acc, feature) => {
-        if (!model!.features.hasOwnProperty(feature.name)) {
+        if (!Object.prototype.hasOwnProperty.call(model.features, feature.name)) {
           if (feature.type === "Number") {
             acc[feature.name] = {
               properties: {
@@ -99,337 +158,160 @@ export function EditModelForm() {
             };
           }
         } else {
-          acc[feature.name] = model!.features[feature.name];
+          acc[feature.name] = (model as any).features[feature.name];
         }
         return acc;
       }, {} as Record<string, any>),
-    };
+    } as Model;
 
     try {
       await updateModel(newModel);
+      message.success("Model updated successfully");
       navigate("/models");
     } catch (error) {
       console.error("Error saving model:", error);
+      message.error("Failed to save model");
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div
       style={{
-        padding: "32px",
+        padding: 24,
         maxWidth: "100%",
-        height: "100vh",
-        overflowY: "auto",
-        margin: "0 auto",
-        fontFamily: "Arial, sans-serif",
+        minHeight: "100vh",
         display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        background: "#fafafa",
       }}
     >
-      <h1 style={{ fontFamily: "Arial, sans-serif" }}>Editing Model</h1>
-      <div style={{ height: "20px" }} />
-      <div
-        style={{
-          width: "50%",
-        }}
-      >
-        <CustomTextField
-          label="Model type"
-          value={modelType}
-          onChange={(value) => setModelType(value)}
-          placeholder='e.g., "Deposit", "Mill", "Bin"...'
-          enabled={false}
-        />
-        <div style={{ height: "20px" }} />
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: "4px",
-            alignItems: "center",
-            fontFamily: "Arial, sans-serif",
-            width: "50%",
-          }}
-        >
-          <TextLabel text="ThingId:" />
-          <p>{thingId ? thingId : "No ThingId provided"}</p>
-        </div>
-        <div style={{ height: "20px" }} />
-        <h2
-          style={{
-            fontFamily: "Arial, sans-serif",
-            fontSize: "24px",
-            marginBottom: "12px",
-          }}
-        >
-          Features
-        </h2>
+      <div style={{ width: "50%", minWidth: 360, maxWidth: 960 }}>
+        <Typography.Title level={2} style={{ textAlign: "center", marginBottom: 24 }}>
+          Editing Model
+        </Typography.Title>
 
-        <div>
-          {features.length > 0 ? (
-            <ul
-              style={{
-                listStyleType: "none",
-                padding: 0,
-                margin: 0,
-                width: "100%",
-              }}
-            >
-              {features.map((feature, index) => (
-                <li
-                  key={index}
-                  style={{
-                    backgroundColor: "#ffffff",
-                    padding: "12px 16px",
-                    marginBottom: "10px",
-                    borderRadius: "8px",
-                    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: "12px",
-                      justifyContent: "space-between",
-                      width: "100%",
-                      fontFamily: "Arial, sans-serif",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: "12px",
-                        fontFamily: "Arial, sans-serif",
-                        width: "100%",
-                      }}
-                    >
-                      <TextLabel text={feature.name} />
-                      <span
-                        style={{
-                          backgroundColor: "#f0f0f0",
-                          padding: "4px 8px",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          color: "#333",
-                        }}
-                      >
-                        {feature.type}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <button
-                        style={{
-                          backgroundColor: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          transition: "transform 0.2s",
-                        }}
-                        onMouseOver={(e) =>
-                          (e.currentTarget.style.transform = "scale(1.2)")
-                        }
-                        onMouseOut={(e) =>
-                          (e.currentTarget.style.transform = "scale(1)")
-                        }
-                        onClick={() => {
-                          setFeatures(features.filter((_, i) => i !== index));
-                        }}
-                      >
-                        <MdDelete size={24} color="red" />
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p style={{ fontStyle: "italic", color: "#888" }}>
-              No features added yet.
-            </p>
-          )}
-        </div>
-
-        <div style={{ height: "20px" }} />
-        <TextLabel text="New Feature" />
-        <div style={{ height: "8px" }} />
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: "8px",
-            alignItems: "center",
-            fontFamily: "Arial, sans-serif",
-            width: "100%",
-          }}
-        >
-          <div style={{ flexGrow: 1 }}>
-            <CustomTextField
-              value={newFeature.name}
-              onChange={(value) =>
-                setNewFeature({ ...newFeature, name: value })
-              }
-              placeholder='Feature name (e.g., "Temperature")'
-            />
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
+            <Spin tip="Loading model..." />
           </div>
+        ) : !thingId ? (
+          <Alert type="error" message="No ThingId provided" showIcon />
+        ) : (
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            <Card title="General">
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Form layout="vertical">
+                  <Form.Item label="Model type">
+                    <Input value={modelType} disabled onChange={(e) => setModelType(e.target.value)} />
+                  </Form.Item>
+                  <Form.Item label="ThingId">
+                    <Input value={thingId} disabled />
+                  </Form.Item>
+                </Form>
+              </Space>
+            </Card>
 
-          <select
-            value={newFeature.type}
-            onChange={(e) =>
-              setNewFeature({ ...newFeature, type: e.target.value })
-            }
-            style={{
-              padding: "8px",
-              fontSize: "16px",
-              fontFamily: "Arial, sans-serif",
-              width: "100px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          >
-            {FeaturesTypes.map((featureType) => (
-              <option key={featureType} value={featureType}>
-                {featureType}
-              </option>
-            ))}
-          </select>
-          <button
-            style={{
-              padding: "8px 16px",
-              fontSize: "16px",
-              fontFamily: "Arial, sans-serif",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              setFeatures([...features, newFeature]);
-              setNewFeature({
-                name: "",
-                type: "String",
-                value: "",
-                minValue: 0,
-                maxValue: 0,
-                unit: "",
-                timestamp: new Date().toISOString(),
-              });
-            }}
-          >
-            Add
-          </button>
-        </div>
-        <div style={{ height: "10px" }} />
-        {newFeature.type === "Number" && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              gap: "8px",
-              alignItems: "center",
-              fontFamily: "Arial, sans-serif",
-              width: "100%",
-            }}
-          >
-            <div style={{ flexGrow: 1 }}>
-              <CustomTextField
-                value={newFeature.minValue}
-                onChange={(value: string) => {
-                  const parsed = value === "" ? 0 : Number(value);
-                  setNewFeature({
-                    ...newFeature,
-                    minValue: parsed,
-                  });
-                }}
-                placeholder="Minimum Value"
-                type="number"
-              />
-            </div>
-            <div style={{ flexGrow: 1 }}>
-              <CustomTextField
-                value={newFeature.maxValue}
-                onChange={(value: string) => {
-                  const parsed = value === "" ? 0 : Number(value);
-                  setNewFeature({
-                    ...newFeature,
-                    maxValue: parsed,
-                  });
-                }}
-                placeholder="Maximum Value"
-                type="number"
-              />
-            </div>
-            <div style={{ flexGrow: 1 }}>
-              <CustomTextField
-                value={newFeature.unit}
-                onChange={(value) =>
-                  setNewFeature({ ...newFeature, unit: value })
-                }
-                placeholder='Unit (e.g., "°C", "L", "%")'
-              />
-            </div>
-          </div>
+            <Card title="Features">
+              {features.length === 0 ? (
+                <Empty description="No features added yet" />
+              ) : (
+                <List
+                  dataSource={features}
+                  renderItem={(feature, index) => (
+                    <List.Item
+                      actions={[
+                        <Popconfirm
+                          key="delete"
+                          title="Remove this feature?"
+                          okText="Remove"
+                          okButtonProps={{ danger: true }}
+                          onConfirm={() => handleRemoveFeature(index)}
+                        >
+                          <Button danger type="text" icon={<DeleteOutlined />} />
+                        </Popconfirm>,
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={
+                          <Space>
+                            <Typography.Text strong>{feature.name}</Typography.Text>
+                            <Tag>{feature.type}</Tag>
+                          </Space>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              )}
+
+              <Divider style={{ margin: "16px 0" }} />
+              <Typography.Text strong>New feature</Typography.Text>
+              <Form layout="vertical" style={{ marginTop: 12 }}>
+                <Space wrap style={{ width: "100%" }}>
+                  <Form.Item label="Name" style={{ minWidth: 200, flex: 1 }}>
+                    <Input
+                      placeholder='e.g., "Temperature"'
+                      value={newFeature.name}
+                      onChange={(e) => setNewFeature({ ...newFeature, name: e.target.value })}
+                    />
+                  </Form.Item>
+                  <Form.Item label="Type" style={{ minWidth: 160 }}>
+                    <Select
+                      value={newFeature.type}
+                      onChange={(val) => setNewFeature({ ...newFeature, type: val })}
+                      options={FeaturesTypes.map((t) => ({ label: t, value: t }))}
+                      style={{ minWidth: 160 }}
+                    />
+                  </Form.Item>
+                  <Form.Item label=" ">
+                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAddFeature}>
+                      Add
+                    </Button>
+                  </Form.Item>
+                </Space>
+
+                {newFeature.type === "Number" && (
+                  <Space wrap style={{ width: "100%" }}>
+                    <Form.Item label="Minimum Value" style={{ minWidth: 160 }}>
+                      <InputNumber
+                        style={{ width: 160 }}
+                        value={newFeature.minValue ?? 0}
+                        onChange={(val) => setNewFeature({ ...newFeature, minValue: Number(val ?? 0) })}
+                      />
+                    </Form.Item>
+                    <Form.Item label="Maximum Value" style={{ minWidth: 160 }}>
+                      <InputNumber
+                        style={{ width: 160 }}
+                        value={newFeature.maxValue ?? 0}
+                        onChange={(val) => setNewFeature({ ...newFeature, maxValue: Number(val ?? 0) })}
+                      />
+                    </Form.Item>
+                    <Form.Item label="Unit" style={{ minWidth: 160 }}>
+                      <Input
+                        style={{ width: 160 }}
+                        placeholder='e.g., "°C", "L", "%"'
+                        value={newFeature.unit}
+                        onChange={(e) => setNewFeature({ ...newFeature, unit: e.target.value })}
+                      />
+                    </Form.Item>
+                  </Space>
+                )}
+              </Form>
+            </Card>
+
+            <Space style={{ width: "100%", justifyContent: "center" }}>
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} disabled={saving}>
+                Cancel
+              </Button>
+              <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={handleSave}>
+                Save
+              </Button>
+            </Space>
+          </Space>
         )}
-      </div>
-
-      <div style={{ height: "20px" }} />
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          width: "50%",
-        }}
-      >
-        <button
-          style={{
-            padding: "8px 16px",
-            fontSize: "16px",
-            fontFamily: "Arial, sans-serif",
-            backgroundColor: "#c40707ff",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-          onClick={() => {
-            navigate(-1);
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          style={{
-            padding: "8px 16px",
-            fontSize: "16px",
-            fontFamily: "Arial, sans-serif",
-            backgroundColor: "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-          onClick={() => {
-            handleSave();
-          }}
-        >
-          Save
-        </button>
       </div>
     </div>
   );

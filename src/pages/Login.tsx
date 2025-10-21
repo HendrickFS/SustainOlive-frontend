@@ -1,98 +1,157 @@
-import React, { useState } from "react"
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "@fontsource/inter/600.css";
+import { Button, Card, Checkbox, Form, Input, Space, Typography, message } from "antd";
 
-
-import oliveOilImg from "../assets/azeite_app.png"
-import azeiteImg from "../assets/azeite.jpg"
-import sustainoliveLogo from "../assets/pegada.png"
-import ipbLogo from "../assets/ipbLogo.png"
-import { Home } from "./Home";
+import oliveOilImg from "../assets/azeite_app.png";
+import azeiteImg from "../assets/azeite.jpg";
+import sustainoliveLogo from "../assets/pegada.png";
+import ipbLogo from "../assets/ipbLogo.png";
 
 export function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-
+    const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
 
-    function handleLogin() {
-        navigate("/home");
-    }
+    const onFinish = async (_values: { email: string; password: string; remember?: boolean }) => {
+        setSubmitting(true);
+        try {
+            // TODO: integrate real authentication here
+            message.success("Welcome back");
+            navigate("/home");
+        } catch (e) {
+            message.error("Login failed. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const onFinishFailed = () => {
+        message.warning("Please fix the errors in the form");
+    };
 
     return (
-        <div style={{
+        <div
+            style={{
                 display: "flex",
                 flexDirection: "row",
-                alignItems: "center",
+                alignItems: "stretch",
                 justifyContent: "center",
                 height: "100vh",
-                backgroundColor: "#f0f0f0"
-            }}>
-            <img src={oliveOilImg} alt="Olive oil app" style={{
-                width: "70%",
-                height: "100%",
-                objectFit: "cover",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
-            }}/>
-
-            <div style={{ 
-                position: 'relative', 
-                width: '50%', 
-                height: '100vh', 
-                overflow: 'hidden' 
-            }}>
-                <img 
-                    src={azeiteImg} 
-                    alt="Background" 
-                    style={{ 
-                    position: 'absolute',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover',
-                    filter: 'blur(15px) brightness(0.5)',
-                    zIndex: 0,
-                    scale: '1.5',
-                    }} 
-                />
-                <div style={{ position: 'relative',
-                    zIndex: 1,
-                    color: 'white',
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "100%",
+                backgroundColor: "#f0f2f5",
+            }}
+        >
+            <img
+                src={oliveOilImg}
+                alt="Olive oil app"
+                style={{
+                    width: "50%",
                     height: "100%",
-                    gap: "20px",
-                }}>
-                    <div style={{marginBottom: "auto"}}></div>
-                    <img src={sustainoliveLogo} alt="Sustainolive Logo" style={{ width: "300px", marginBottom: "20px"}} />
-                    <h2 style={{fontFamily: "Inter"}}>Login</h2>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        style={{ marginBottom: "10px", padding: "8px", width: "300px" }}
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        style={{ marginBottom: "10px", padding: "8px", width: "300px" }}
-                    />
-                    <button
-                        onClick={handleLogin}
-                        style={{ padding: "10px 20px",backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer" }}>
-                        Login
-                    </button>
-                    <img src={ipbLogo} alt="IPB Logo" style={{ width: "300px", marginTop: "auto", marginBottom: "30px" }} />
+                    objectFit: "cover",
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                }}
+            />
+
+            <div
+                style={{ position: "relative", width: "50%", height: "100vh", overflow: "hidden" }}
+            >
+                        <img
+                    src={azeiteImg}
+                    alt="Background"
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                                filter: "blur(4px) brightness(0.6)",
+                        zIndex: 0,
+                        scale: "1.4",
+                    }}
+                />
+
+                <div
+                    style={{
+                        position: "relative",
+                        zIndex: 1,
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 20,
+                        color: "#fff",
+                    }}
+                >
+                    <div style={{ marginBottom: "auto" }} />
+
+                    <img src={sustainoliveLogo} alt="Sustainolive Logo" style={{ width: 240, marginBottom: 16 }} />
+
+                                <Card
+                        style={{
+                            width: "90%",
+                            maxWidth: 420,
+                                        background: "rgba(255,255,255,0.18)",
+                                        backdropFilter: "blur(12px) saturate(180%)",
+                                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                                        border: "1px solid rgba(255, 255, 255, 0.35)",
+                                        boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                        }}
+                        bodyStyle={{ padding: 24 }}
+                    >
+                        <Space direction="vertical" style={{ width: "100%" }} size="large">
+                            <Typography.Title level={3} style={{ margin: 0, textAlign: "center", color: "#fff" }}>
+                                Login
+                            </Typography.Title>
+                            <Form
+                                layout="vertical"
+                                name="login"
+                                requiredMark={false}
+                                onFinish={onFinish}
+                                onFinishFailed={onFinishFailed}
+                                autoComplete="on"
+                            >
+                                                <Form.Item
+                                                    label={<span style={{ color: "#fff" }}>Email</span>}
+                                                    name="email"
+                                                    rules={[
+                                                        { required: true, message: "Please input your email" },
+                                                        { type: "email", message: "Enter a valid email" },
+                                                    ]}
+                                                >
+                                    <Input placeholder="you@example.com" inputMode="email" />
+                                </Form.Item>
+                                                <Form.Item
+                                                    label={<span style={{ color: "#fff" }}>Password</span>}
+                                                    name="password"
+                                                    rules={[
+                                                        { required: true, message: "Please input your password" },
+                                                        { min: 6, message: "Password must be at least 6 characters" },
+                                                    ]}
+                                                >
+                                    <Input.Password placeholder="••••••••" />
+                                </Form.Item>
+                                <Form.Item name="remember" valuePropName="checked" style={{ marginBottom: 8 }}>
+                                    <Checkbox style={{ color: "#fff" }}>Remember me</Checkbox>
+                                </Form.Item>
+                                <Form.Item style={{ marginBottom: 0 }}>
+                                    <Button
+                                        type="primary"
+                                        htmlType="submit"
+                                        block
+                                        loading={submitting}
+                                        style={{ backgroundColor: "#4CAF50", borderColor: "#4CAF50" }}
+                                    >
+                                        Log in
+                                    </Button>
+                                </Form.Item>
+                            </Form>
+                        </Space>
+                    </Card>
+
+                    <img src={ipbLogo} alt="IPB Logo" style={{ width: 200, marginTop: "auto", marginBottom: 24 }} />
                 </div>
             </div>
         </div>
     );
-
 }

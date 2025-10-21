@@ -7,6 +7,10 @@ import type { Group } from "three";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { TextLabel } from "./TextLabel";
 import { getType } from "../utils/formatting";
+import { Card, Row, Col, Typography, Tag, Space, Divider, Spin, List, Alert } from "antd";
+import { ApiOutlined, CodeOutlined, InfoCircleOutlined } from "@ant-design/icons";
+
+const { Title, Text, Paragraph } = Typography;
 
 function capitalize(str: string): string {
   if (!str) return "";
@@ -94,213 +98,180 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
   return (
     <div
       style={{
-        padding: "32px",
-        maxWidth: "100%",
+        width: "100%",
         height: "100vh",
         overflowY: "auto",
-        margin: "0 auto",
-        fontFamily: "Arial, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "start",
+        padding: "24px",
       }}
     >
-      <h1 style={{ fontFamily: "Inter, sans-serif" }}>
-        {capitalize(modelType)} Model Information
-      </h1>
-      <div style={{ height: "40px" }} />
-      <div
-        style={{
-          width: "100%",
-          paddingBottom: "16px",
-          marginBottom: "16px",
-          display: "flex",
-          flexDirection: "row",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            width: "40%",
-            padding: "16px",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                width: "100%",
-                height: "400px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Suspense fallback={<div>Loading model...</div>}>
-                <Canvas
-                  camera={{ position: [0, 0, 3] }}
-                  style={{ width: "400px", height: "400px" }}
-                >
-                  <ambientLight intensity={0.5} />
-                  <directionalLight position={[5, 5, 5]} intensity={3} />
-                  <directionalLight position={[-5, 5, -5]} intensity={3} />
-                  <directionalLight position={[5, 5, -5]} intensity={3} />
-                  <directionalLight position={[-5, 5, 5]} intensity={3} />
-                  <directionalLight position={[0, 5, 0]} intensity={3} />
-                  <directionalLight position={[0, -5, 0]} intensity={3} />
-                  <OrbitControls />
-                  {thingId && <ModelViewer url={getModelPath(thingId)} />}
-                </Canvas>
-              </Suspense>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "start",
-              width: "100%",
-              gap: "10px",
-            }}
-          >
-            <h2 style={{ fontFamily: "Inter, sans-serif" }}>Thing ID:</h2>
-            <TextLabel text={thingId} />
-            <h2 style={{ fontFamily: "Inter, sans-serif" }}>Features:</h2>
-            <ul
-              style={{
-                listStyleType: "none",
-                padding: 0,
-                margin: 0,
-                width: "100%",
-              }}
-            >
-              {features.map((feature, index) => (
-                <li
-                  key={index}
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <Title level={2}>
+          <InfoCircleOutlined style={{ marginRight: 8 }} />
+          {capitalize(modelType)} Model Information
+        </Title>
+
+        <Row gutter={24}>
+          {/* Left Column - 3D Model and Features */}
+          <Col xs={24} lg={10}>
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              {/* 3D Model Viewer Card */}
+              <Card title="3D Model Viewer">
+                <div
                   style={{
-                    backgroundColor: "#ffffff",
-                    padding: "12px 16px",
-                    marginBottom: "10px",
-                    borderRadius: "8px",
-                    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.1)",
+                    width: "100%",
+                    height: "400px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                 >
-                  <div
+                  <Suspense fallback={<Spin size="large" tip="Loading 3D model..." />}>
+                    <Canvas
+                      camera={{ position: [0, 0, 3] }}
+                      style={{ width: "100%", height: "400px" }}
+                    >
+                      <ambientLight intensity={0.5} />
+                      <directionalLight position={[5, 5, 5]} intensity={3} />
+                      <directionalLight position={[-5, 5, -5]} intensity={3} />
+                      <directionalLight position={[5, 5, -5]} intensity={3} />
+                      <directionalLight position={[-5, 5, 5]} intensity={3} />
+                      <directionalLight position={[0, 5, 0]} intensity={3} />
+                      <directionalLight position={[0, -5, 0]} intensity={3} />
+                      <OrbitControls />
+                      {thingId && <ModelViewer url={getModelPath(thingId)} />}
+                    </Canvas>
+                  </Suspense>
+                </div>
+              </Card>
+
+              {/* Thing ID Card */}
+              <Card title="Thing ID" size="small">
+                <TextLabel text={thingId} />
+              </Card>
+
+              {/* Features Card */}
+              <Card title="Features">
+                <List
+                  dataSource={features}
+                  renderItem={(feature) => (
+                    <List.Item>
+                      <Space style={{ width: "100%", justifyContent: "space-between" }}>
+                        <TextLabel text={feature.name} />
+                        <Tag color="blue">{feature.type}</Tag>
+                      </Space>
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            </Space>
+          </Col>
+
+          {/* Right Column - MQTT Documentation */}
+          <Col xs={24} lg={14}>
+            <Card 
+              title={
+                <span>
+                  <ApiOutlined style={{ marginRight: 8 }} />
+                  MQTT Documentation
+                </span>
+              }
+            >
+              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                <Alert
+                  message="Real-time Communication"
+                  description="This model supports MQTT for real-time communication. Send messages based on the following information."
+                  type="info"
+                  showIcon
+                />
+
+                <Divider orientation="left">
+                  <CodeOutlined /> Connection Details
+                </Divider>
+
+                <div>
+                  <Text strong>MQTT Port:</Text>
+                  <pre
                     style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: "12px",
-                      justifyContent: "space-between",
-                      width: "100%",
-                      fontFamily: "Arial, sans-serif",
+                      backgroundColor: "#f5f5f5",
+                      padding: "12px",
+                      borderRadius: "6px",
+                      marginTop: "8px",
+                      fontFamily: "monospace",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: "12px",
-                        fontFamily: "Arial, sans-serif",
-                        width: "100%",
-                      }}
-                    >
-                      <TextLabel text={feature.name} />
-                      <span
-                        style={{
-                          backgroundColor: "#f0f0f0",
-                          padding: "4px 8px",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          color: "#333",
-                        }}
-                      >
-                        {feature.type}
-                      </span>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "start",
-            width: "60%",
-            gap: "10px",
-            padding: "16px",
-            borderLeft: "2px solid #ccc",
-          }}
-        >
-          {/* MQTT documentation */}
-          <h2 style={{ fontFamily: "Inter, sans-serif" }}>
-            MQTT Documentation
-          </h2>
-          <p>
-            This model supports MQTT for real-time communication. Send messagens
-            based on the following information.
-          </p>
-          <div style={{ height: "10px" }} />
-          <h3 style={{ fontFamily: "Inter, sans-serif" }}>MQTT Port:</h3>
+                    <code>1884</code>
+                  </pre>
+                </div>
 
-          <pre
-            style={{
-              backgroundColor: "#f5f5f5",
-              padding: "10px",
-              borderRadius: "5px",
-            }}
-          >
-            <code>1884</code>
-          </pre>
-          <div style={{ height: "10px" }} />
-          <h3 style={{ fontFamily: "Inter, sans-serif" }}>MQTT Topic:</h3>
+                <div>
+                  <Text strong>MQTT Topic:</Text>
+                  <pre
+                    style={{
+                      backgroundColor: "#f5f5f5",
+                      padding: "12px",
+                      borderRadius: "6px",
+                      marginTop: "8px",
+                      fontFamily: "monospace",
+                    }}
+                  >
+                    <code>{getType(thingId)}/incoming/{thingId}</code>
+                  </pre>
+                </div>
 
-          <pre
-            style={{
-              backgroundColor: "#f5f5f5",
-              padding: "10px",
-              borderRadius: "5px",
-            }}
-          >
-            <code>
-              {getType(thingId)}/incoming/{thingId}
-            </code>
-          </pre>
+                <Divider orientation="left">
+                  <CodeOutlined /> Payload Structure
+                </Divider>
 
-          <div style={{ height: "10px" }} />
-          <h3 style={{ fontFamily: "Inter, sans-serif" }}>MQTT Payload:</h3>
-          <p>
-            The payload should be a JSON object with the following structure:
-          </p>
-          <pre
-            style={{
-              background: "#f5f5f5",
-              fontFamily: "monospace",
-              padding: "12px",
-              borderRadius: "6px",
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            <code>
-              {`{
+                <div>
+                  <Text strong>MQTT Payload:</Text>
+                  <Paragraph style={{ marginTop: 8 }}>
+                    The payload should be a JSON object with the following structure:
+                  </Paragraph>
+                  <pre
+                    style={{
+                      background: "#f5f5f5",
+                      fontFamily: "monospace",
+                      padding: "12px",
+                      borderRadius: "6px",
+                      whiteSpace: "pre-wrap",
+                      overflow: "auto",
+                    }}
+                  >
+                    <code>
+                      {`{
   "thingId": "${thingId}",
 ${features.map((f) => `  "${f.name}"?: (value for ${f.name})`).join(",\n")}
 }`}
-            </code>
-          </pre>
-          <p>
-            Note that the "thingId" field is required, and the other fields
-            correspond to the features of the model. The values should match the
-            expected data types for each feature. All features are optional, and
-            it's possible to send only the features you want to update.
-          </p>
-        </div>
-      </div>
+                    </code>
+                  </pre>
+                </div>
+
+                <Alert
+                  message="Important Notes"
+                  description={
+                    <>
+                      <Paragraph style={{ margin: 0 }}>
+                        • The <Text code>thingId</Text> field is required.
+                      </Paragraph>
+                      <Paragraph style={{ margin: 0 }}>
+                        • Other fields correspond to the features of the model.
+                      </Paragraph>
+                      <Paragraph style={{ margin: 0 }}>
+                        • Values should match the expected data types for each feature.
+                      </Paragraph>
+                      <Paragraph style={{ margin: 0 }}>
+                        • All features are optional - send only what you want to update.
+                      </Paragraph>
+                    </>
+                  }
+                  type="warning"
+                  showIcon
+                />
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+      </Space>
     </div>
   );
 }

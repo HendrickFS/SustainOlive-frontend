@@ -14,9 +14,11 @@
     "deploy": "npm run build:deploy && echo 'Build completed for production deployment'"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.0",
     "@fontsource/inter": "^5.2.6",
     "@react-three/drei": "^10.5.0",
     "@react-three/fiber": "^9.2.0",
+    "antd": "^5.27.6",
     "axios": "^1.10.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

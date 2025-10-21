@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { getModel, type Model } from "../api/modelApi";
 import { formatFeatureName, formatName } from "../utils/formatting";
 import { FeatureEventsTable } from "./FeatureEventsTable";
+import { Card, Spin, Space, Typography, Descriptions } from "antd";
+import { DatabaseOutlined } from "@ant-design/icons";
+
+const { Title, Text } = Typography;
 
 export function DeviceEvents({ thingId }: { thingId: string }) {
   const [model, setModel] = useState<Model | null>(null);
@@ -17,53 +21,57 @@ export function DeviceEvents({ thingId }: { thingId: string }) {
   }, [thingId]);
 
   if (loading || !model) {
-    return <p>Loading...</p>;
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <Spin size="large" tip="Loading device data..." />
+      </div>
+    );
   }
 
   return (
     <div
       style={{
-        padding: "16px",
-        maxWidth: "100%",
+        width: "100%",
         height: "100vh",
         overflowY: "auto",
-        margin: "0 auto",
-        fontFamily: "Arial, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "start",
+        padding: "24px",
       }}
     >
-      <div
-        style={{
-          marginBottom: "24px",
-          width: "100%",
-          padding: "16px",
-          backgroundColor: "#f9f9f9",
-          borderLeft: "4px solid #2C2803",
-          border: "1px solid #e0e0e0",
-          borderRadius: "8px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-        }}
-      >
-        <h2 style={{ margin: "0 0 8px 0", fontSize: "20px", color: "#333" }}>
-          {formatName(thingId)}
-        </h2>
-        <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-          <strong>Thing ID:</strong> {thingId}
-        </p>
-      </div>
-      {loading && <p>Loading...</p>}
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <Card
+          style={{
+            borderLeft: "4px solid #2C2803",
+          }}
+        >
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <Title level={3} style={{ margin: 0 }}>
+              <DatabaseOutlined style={{ marginRight: 8 }} />
+              {formatName(thingId)}
+            </Title>
+            <Descriptions size="small" column={1}>
+              <Descriptions.Item label="Thing ID">
+                <Text code>{thingId}</Text>
+              </Descriptions.Item>
+            </Descriptions>
+          </Space>
+        </Card>
 
-      {Object.entries(model.features).map(([name, featureData]) => (
-        <div key={name}>
+        {Object.entries(model.features).map(([name, featureData]) => (
           <FeatureEventsTable
+            key={name}
             model={model}
             featureName={name}
             featureData={featureData}
           />
-        </div>
-      ))}
+        ))}
+      </Space>
     </div>
   );
 }

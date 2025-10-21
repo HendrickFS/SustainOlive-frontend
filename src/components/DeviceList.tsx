@@ -2,16 +2,25 @@ import { useEffect, useState } from "react";
 import { getModels, type Model } from "../api/modelApi";
 import { useNavigate } from "react-router-dom";
 import { formatName } from "../utils/formatting";
+import { List, Card, Typography, Space } from "antd";
+import { RightOutlined } from "@ant-design/icons";
+
+const { Title, Text } = Typography;
 
 export function DeviceList() {
   const [models, setModels] = useState<Model[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchModels = async () => {
-      const data = await getModels();
-      setModels(data);
+      try {
+        const data = await getModels();
+        setModels(data);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchModels();
   }, []);
@@ -23,63 +32,66 @@ export function DeviceList() {
   return (
     <div
       style={{
-        padding: "16px",
-        maxWidth: "100%",
+        padding: "24px",
         height: "100vh",
         overflowY: "auto",
-        margin: "0 auto",
-        fontFamily: "Arial, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "start",
       }}
     >
-      <h2>Device List</h2>
-      <div style={{ height: "16px" }}></div>
-{models.map((model) => (
-  <div
-    key={model.thingId}
-    onClick={() => handleRedirect(model.thingId)}
-    style={{
-      background: "linear-gradient(90deg, #f0f4ff, #ffffff)",
-      borderLeft: "4px solid #2C2803",
-      width: "200px",
-      height: "75px",
-      padding: "16px",
-      margin: "8px",
-      borderRadius: "8px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-      cursor: "pointer",
-      transition: "transform 0.2s ease, box-shadow 0.2s ease",
-    }}
-    onMouseEnter={(e) => {
-      (e.currentTarget as HTMLDivElement).style.transform = "scale(1.03)";
-      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-    }}
-    onMouseLeave={(e) => {
-      (e.currentTarget as HTMLDivElement).style.transform = "scale(1)";
-      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-    }}
-  >
-    <h3 style={{
-      fontSize: "16px",
-      fontWeight: 500,
-      color: "#1f2937",
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis"
-    }}>
-      {formatName(model.thingId)}
-    </h3>
-    <p style={{
-      fontSize: "12px",
-      color: "#6b7280",
-      marginTop: "4px"
-    }}>
-      View Details
-    </p>
-  </div>
-))}
+      <Title level={2}>Device List</Title>
+      
+      <List
+        loading={loading}
+        grid={{
+          gutter: 16,
+          xs: 1,
+          sm: 2,
+          md: 3,
+          lg: 4,
+          xl: 5,
+          xxl: 6,
+        }}
+        dataSource={models}
+        renderItem={(model) => (
+          <List.Item>
+            <Card
+              hoverable
+              onClick={() => handleRedirect(model.thingId)}
+              style={{
+                borderLeft: "4px solid #2C2803",
+                background: "linear-gradient(90deg, #f0f4ff, #ffffff)",
+              }}
+              bodyStyle={{
+                padding: "16px",
+                minHeight: "75px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              <Space direction="vertical" size={4} style={{ width: "100%" }}>
+                <Text
+                  strong
+                  style={{
+                    fontSize: "16px",
+                    color: "#1f2937",
+                    display: "block",
+                  }}
+                  ellipsis={{ tooltip: formatName(model.thingId) }}
+                >
+                  {formatName(model.thingId)}
+                </Text>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: "12px" }}
+                >
+                  <RightOutlined style={{ marginRight: 4 }} />
+                  View Details
+                </Text>
+              </Space>
+            </Card>
+          </List.Item>
+        )}
+      />
     </div>
   );
 }

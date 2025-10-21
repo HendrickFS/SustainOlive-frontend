@@ -6,6 +6,35 @@ import {
   formatFeatureName,
   formatTimestamp,
 } from "../utils/formatting";
+import { Button, Card, Space, Table, Tag, Typography } from "antd";
+import { ReloadOutlined, EyeOutlined } from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
+
+const { Title } = Typography;
+
+interface FeatureData {
+  featureName: string;
+  value: any;
+  minValue?: number;
+  maxValue?: number;
+  unit?: string;
+  status: "Critical" | "Non-Critical" | "Unknown";
+  timestamp?: string;
+  backgroundColor: string;
+}
+
+function isValueCritical(value: any, min?: number, max?: number): boolean {
+  const checkOne = (v: any) => {
+    const n = Number(v);
+    if (Number.isNaN(n)) return false;
+    if (min != null && n < Number(min)) return true;
+    if (max != null && n > Number(max)) return true;
+    return false;
+  };
+
+  if (Array.isArray(value)) return value.some(checkOne);
+  return checkOne(value);
+}
 
 function isModelCritical(model: Model): boolean {
   const features = model.features ?? {};
@@ -16,16 +45,7 @@ function isModelCritical(model: Model): boolean {
     const min = data?.properties?.minValue;
     const max = data?.properties?.maxValue;
 
-    const checkOne = (v: any) => {
-      const n = Number(v);
-      if (Number.isNaN(n)) return false;
-      if (min != null && n < Number(min)) return true;
-      if (max != null && n > Number(max)) return true;
-      return false;
-    };
-
-    if (Array.isArray(value)) return value.some(checkOne);
-    return checkOne(value);
+    return isValueCritical(value, min, max);
   });
 }
 
@@ -62,6 +82,125 @@ export function ModelsData() {
       });
   }, []);
 
+  const getTableColumns = (): ColumnsType<FeatureData> => [
+    {
+      title: "Feature",
+      dataIndex: "featureName",
+      key: "featureName",
+      width: "20%",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Value",
+      dataIndex: "value",
+      key: "value",
+      width: "20%",
+      render: (value, record) => {
+        const displayValue = Array.isArray(value)
+          ? value.join(", ")
+          : value !== undefined
+          ? `${value}${record.unit ? " " + record.unit : ""}`
+          : "-";
+        return displayValue;
+      },
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Minimum Value",
+      dataIndex: "minValue",
+      key: "minValue",
+      width: "15%",
+      render: (minValue, record) =>
+        minValue !== undefined
+          ? `${minValue}${record.unit ? " " + record.unit : ""}`
+          : "-",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Maximum Value",
+      dataIndex: "maxValue",
+      key: "maxValue",
+      width: "15%",
+      render: (maxValue, record) =>
+        maxValue !== undefined
+          ? `${maxValue}${record.unit ? " " + record.unit : ""}`
+          : "-",
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: "15%",
+      render: (status: string) => {
+        if (status === "Critical") {
+          return <Tag color="error">Critical</Tag>;
+        } else if (status === "Non-Critical") {
+          return <Tag color="success">Non-Critical</Tag>;
+        }
+        return "-";
+      },
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+    {
+      title: "Update Time",
+      dataIndex: "timestamp",
+      key: "timestamp",
+      width: "15%",
+      render: (timestamp) => (timestamp ? formatTimestamp(timestamp) : "Unknown"),
+      onCell: (record) => ({
+        style: { backgroundColor: record.backgroundColor },
+      }),
+    },
+  ];
+
+  const convertModelToTableData = (model: Model): FeatureData[] => {
+    return Object.entries(model.features).map(([name, data]: [string, any]) => {
+      const value = data.properties?.value;
+      const minValue = data.properties?.minValue;
+      const maxValue = data.properties?.maxValue;
+      
+      const isCritical = minValue != null && maxValue != null
+        ? isValueCritical(value, minValue, maxValue)
+        : false;
+      
+      const backgroundColor =
+        minValue != null && maxValue != null
+          ? isCritical
+            ? "#f8d7da"
+            : "#d4edda"
+          : "#fff";
+
+      const status: "Critical" | "Non-Critical" | "Unknown" =
+        minValue != null && maxValue != null
+          ? isCritical
+            ? "Critical"
+            : "Non-Critical"
+          : "Unknown";
+
+      return {
+        featureName: formatFeatureName(name),
+        value,
+        minValue,
+        maxValue,
+        unit: data.properties?.unit,
+        status,
+        timestamp: data.properties?.timestamp,
+        backgroundColor,
+      };
+    });
+  };
+
   return (
     <div
       style={{
@@ -69,304 +208,102 @@ export function ModelsData() {
         height: "100vh",
         overflowY: "auto",
         backgroundColor: "#dfdfdfff",
-        display: "flex",
-        flexDirection: "column",
+        padding: "24px",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "16px",
-        }}
-      >
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
         <div
           style={{
             display: "flex",
-            gap: "8px",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <button
-            style={{
-              padding: "10px 20px",
-              backgroundColor: filter === "All" ? "#2C2803" : "transparent",
-              color: filter === "All" ? "#fff" : "#2C2803",
-              border: "1px solid #2C2803",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              setFilter("All");
-              setFilteredModels(models);
-            }}
-          >
-            All
-          </button>
-          <button
-            style={{
-              padding: "10px 20px",
-              backgroundColor:
-                filter === "Critical" ? "#2C2803" : "transparent",
-              color: filter === "Critical" ? "#fff" : "#2C2803",
-              border: "1px solid #2C2803",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              setFilter("Critical");
-              setFilteredModels(models.filter(isModelCritical));
-            }}
-          >
-            Critical
-          </button>
-          <button
-            style={{
-              padding: "10px 20px",
-              backgroundColor:
-                filter === "Non-Critical" ? "#2C2803" : "transparent",
-              color: filter === "Non-Critical" ? "#fff" : "#2C2803",
-              border: "1px solid #2C2803",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              setFilter("Non-Critical");
-              setFilteredModels(
-                models.filter((model) => !isModelCritical(model))
-              );
-            }}
-          >
-            Non-Critical
-          </button>
-        </div>
-        <button
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "transparent",
-            color: "#2196F3",
-            border: "1px solid #2196F3",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-          onClick={() => {
-            refreshModels();
-          }}
-        >
-          Refresh
-        </button>
-      </div>
-      {filteredModels.map((model) => (
-        <div
-          style={{
-            backgroundColor: "#fff",
-            padding: "16px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-            margin: "16px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
-          >
-            <h3 style={{ fontFamily: "Inter, sans-serif" }}>
-              {formatName(model.thingId)}
-            </h3>
-            <button
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#fff",
-                color: "#2196F3",
-                border: "1px solid #2196F3",
-                borderRadius: "5px",
-                cursor: "pointer",
+          <Space>
+            <Button
+              type={filter === "All" ? "primary" : "default"}
+              onClick={() => {
+                setFilter("All");
+                setFilteredModels(models);
               }}
-              onClick={() => navigate(`/device-data/${model.thingId}`)}
+              style={
+                filter === "All"
+                  ? { backgroundColor: "#2C2803", borderColor: "#2C2803" }
+                  : { color: "#2C2803", borderColor: "#2C2803" }
+              }
             >
-              View Data Log
-            </button>
-          </div>
-          <table
-            style={{
-              borderCollapse: "collapse",
-              width: "100%",
-              marginTop: "8px",
-              fontFamily: "Arial, sans-serif",
-              tableLayout: "fixed",
-            }}
+              All
+            </Button>
+            <Button
+              type={filter === "Critical" ? "primary" : "default"}
+              onClick={() => {
+                setFilter("Critical");
+                setFilteredModels(models.filter(isModelCritical));
+              }}
+              style={
+                filter === "Critical"
+                  ? { backgroundColor: "#2C2803", borderColor: "#2C2803" }
+                  : { color: "#2C2803", borderColor: "#2C2803" }
+              }
+            >
+              Critical
+            </Button>
+            <Button
+              type={filter === "Non-Critical" ? "primary" : "default"}
+              onClick={() => {
+                setFilter("Non-Critical");
+                setFilteredModels(
+                  models.filter((model) => !isModelCritical(model))
+                );
+              }}
+              style={
+                filter === "Non-Critical"
+                  ? { backgroundColor: "#2C2803", borderColor: "#2C2803" }
+                  : { color: "#2C2803", borderColor: "#2C2803" }
+              }
+            >
+              Non-Critical
+            </Button>
+          </Space>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={refreshModels}
+            loading={loading}
           >
-            <thead>
-              <tr style={{ backgroundColor: "#f0f0f0" }}>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "20%",
-                    textAlign: "left",
-                  }}
-                >
-                  Feature
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "20%",
-                    textAlign: "left",
-                  }}
-                >
-                  Value
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "15%",
-                    textAlign: "left",
-                  }}
-                >
-                  Minimum Value
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "15%",
-                    textAlign: "left",
-                  }}
-                >
-                  Maximum Value
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "15%",
-                    textAlign: "left",
-                  }}
-                >
-                  Status
-                </th>
-                <th
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    width: "15%",
-                    textAlign: "left",
-                  }}
-                >
-                  Update Time
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(model.features).map(
-                ([name, data]: [string, any]) => {
-                  const backgroundColor =
-                    data.properties?.minValue != null &&
-                    data.properties?.maxValue != null
-                      ? data.properties.value >= data.properties.minValue &&
-                        data.properties.value <= data.properties.maxValue
-                        ? "#d4edda"
-                        : "#f8d7da"
-                      : "#fff";
-
-                  return (
-                    <tr key={name}>
-                      <td
-                        style={{
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          backgroundColor: backgroundColor,
-                        }}
-                      >
-                        {formatFeatureName(name)}
-                      </td>
-                      <td
-                        style={{
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          backgroundColor: backgroundColor,
-                        }}
-                      >
-                        {Array.isArray(data.properties?.value)
-                          ? data.properties.value.join(", ")
-                          : data.properties?.value !== undefined
-                          ? `${data.properties.value}${
-                              data.properties?.unit
-                                ? " " + data.properties.unit
-                                : ""
-                            }`
-                          : "-"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          backgroundColor: backgroundColor,
-                        }}
-                      >
-                        {data.properties?.minValue !== undefined
-                          ? `${data.properties.minValue}${
-                              data.properties?.unit
-                                ? " " + data.properties.unit
-                                : ""
-                            }`
-                          : "-"}
-                      </td>
-
-                      <td
-                        style={{
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          backgroundColor: backgroundColor,
-                        }}
-                      >
-                        {data.properties?.maxValue !== undefined
-                          ? `${data.properties.maxValue}${
-                              data.properties?.unit
-                                ? " " + data.properties.unit
-                                : ""
-                            }`
-                          : "-"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          backgroundColor: backgroundColor,
-                        }}
-                      >
-                        {backgroundColor === "#d4edda"
-                          ? "Non-Critical"
-                          : backgroundColor === "#f8d7da"
-                          ? "Critical"
-                          : "-"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          backgroundColor: backgroundColor,
-                        }}
-                      >
-                        {data.properties?.timestamp
-                          ? formatTimestamp(data.properties.timestamp)
-                          : "Unknown"}
-                      </td>
-                    </tr>
-                  );
-                }
-              )}
-            </tbody>
-          </table>
+            Refresh
+          </Button>
         </div>
-      ))}
+
+        {filteredModels.map((model) => (
+          <Card
+            key={model.thingId}
+            title={
+              <Title level={4} style={{ margin: 0, fontFamily: "Inter, sans-serif" }}>
+                {formatName(model.thingId)}
+              </Title>
+            }
+            extra={
+              <Button
+                type="default"
+                icon={<EyeOutlined />}
+                onClick={() => navigate(`/device-data/${model.thingId}`)}
+                style={{ color: "#2196F3", borderColor: "#2196F3" }}
+              >
+                View Data Log
+              </Button>
+            }
+          >
+            <Table
+              columns={getTableColumns()}
+              dataSource={convertModelToTableData(model)}
+              rowKey="featureName"
+              pagination={false}
+              size="small"
+              bordered
+            />
+          </Card>
+        ))}
+      </Space>
     </div>
   );
 }

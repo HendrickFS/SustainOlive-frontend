@@ -1,0 +1,17 @@
+/* Custom styling for the Menu component */
+.ant-menu-dark .ant-menu-item-selected {
+  background-color: #3a3605 !important;
+  border-left: 4px solid white;
+}
+
+.ant-menu-dark .ant-menu-item {
+  border-left: 4px solid transparent;
+}
+
+.ant-menu-dark .ant-menu-item:hover {
+  background-color: #3a3605 !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected::after {
+  border-right: none;
+}
