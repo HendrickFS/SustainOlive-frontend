@@ -1,6 +1,5 @@
-import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Layout, Menu as AntMenu } from "antd";
+import { Layout, Menu as AntMenu, message } from "antd";
 import {
   HomeOutlined,
   TableOutlined,
@@ -10,6 +9,7 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
+import { useAuth } from "../contexts/AuthContext";
 
 import sustainoliveLogo from "../assets/pegada.png";
 import ipbLogo from "../assets/ipbLogo.png";
@@ -22,6 +22,7 @@ type MenuItem = Required<MenuProps>["items"][number];
 export function Menu() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const menuItems: MenuItem[] = [
     {
@@ -50,14 +51,29 @@ export function Menu() {
       label: "Events",
     },
     {
-      key: "/",
+      key: "/logout",
       icon: <LogoutOutlined />,
       label: "Logout",
     },
   ];
 
-  const handleMenuClick: MenuProps["onClick"] = (e) => {
-    navigate(e.key);
+  const handleMenuClick: MenuProps["onClick"] = async (e) => {
+    if (e.key === "/logout") {
+      const confirmed = window.confirm("Are you sure you want to logout?");
+      
+      if (confirmed) {
+        try {
+          await logout();
+          message.success("Logged out successfully");
+          navigate("/login");
+        } catch (error) {
+          console.error("Logout error:", error);
+          message.error("Failed to logout");
+        }
+      }
+    } else {
+      navigate(e.key);
+    }
   };
 
   return (

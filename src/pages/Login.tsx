@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "@fontsource/inter/600.css";
-import { Button, Card, Checkbox, Form, Input, Space, Typography, message } from "antd";
+import { Button, Card, Checkbox, Form, Input, Space, Typography, message, Alert } from "antd";
+import { useAuth } from "../contexts/AuthContext";
 
 import oliveOilImg from "../assets/azeite_app.png";
 import azeiteImg from "../assets/azeite.jpg";
@@ -10,16 +11,40 @@ import ipbLogo from "../assets/ipbLogo.png";
 
 export function Login() {
     const [submitting, setSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string>("");
     const navigate = useNavigate();
+    const { login } = useAuth();
 
-    const onFinish = async (_values: { email: string; password: string; remember?: boolean }) => {
+    const onFinish = async (values: { email: string; password: string; remember?: boolean }) => {
         setSubmitting(true);
+        setErrorMessage(""); // Clear previous errors
         try {
-            // TODO: integrate real authentication here
-            message.success("Welcome back");
+            await login(values.email, values.password);
+            message.success("Welcome back!");
             navigate("/home");
-        } catch (e) {
-            message.error("Login failed. Please try again.");
+        } catch (error: any) {
+            // Handle Firebase errors
+            const errorCode = error?.code;
+            let errorMsg = "";
+            
+            if (errorCode === "auth/user-not-found") {
+                errorMsg = "No account found with this email address";
+                message.error(errorMsg);
+            } else if (errorCode === "auth/wrong-password" || errorCode === "auth/invalid-credential") {
+                errorMsg = "Incorrect password. Please try again.";
+                message.error(errorMsg);
+            } else if (errorCode === "auth/invalid-email") {
+                errorMsg = "Invalid email format";
+                message.error(errorMsg);
+            } else if (errorCode === "auth/too-many-requests") {
+                errorMsg = "Too many failed attempts. Please try again later.";
+                message.error(errorMsg);
+            } else {
+                errorMsg = "Login failed. Please check your credentials and try again.";
+                message.error(errorMsg);
+            }
+            
+            setErrorMessage(errorMsg);
         } finally {
             setSubmitting(false);
         }
@@ -103,6 +128,18 @@ export function Login() {
                             <Typography.Title level={3} style={{ margin: 0, textAlign: "center", color: "#fff" }}>
                                 Login
                             </Typography.Title>
+                            
+                            {errorMessage && (
+                                <Alert
+                                    message={errorMessage}
+                                    type="error"
+                                    showIcon
+                                    closable
+                                    onClose={() => setErrorMessage("")}
+                                    style={{ marginBottom: 0 }}
+                                />
+                            )}
+                            
                             <Form
                                 layout="vertical"
                                 name="login"
