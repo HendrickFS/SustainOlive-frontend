@@ -28,18 +28,29 @@ export function NewModelCard({ modelTypes = [] }: { modelTypes?: string[] }) {
   return (
     <div
       style={{
-        backgroundColor: "#f0f0f0ff",
+        backgroundColor: "#ffffff",
         color: "black",
-        padding: "16px",
-        borderRadius: "8px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-        width: "280px",
-        height: "450px",
-        margin: "16px",
+        padding: "20px",
+        borderRadius: "12px",
+        border: "2px dashed #d9d9d9",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+        width: "300px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
+        minHeight: "400px",
+        transition: "all 0.3s ease",
+        cursor: "pointer",
+      }}
+      onClick={() => setIsModelOpen(true)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "#262626";
+        e.currentTarget.style.backgroundColor = "#fafafa";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "#d9d9d9";
+        e.currentTarget.style.backgroundColor = "#ffffff";
       }}
     >
       {isModelOpen && (
@@ -56,25 +67,39 @@ export function NewModelCard({ modelTypes = [] }: { modelTypes?: string[] }) {
             alignItems: "center",
             zIndex: 1000,
           }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModelOpen(false);
+          }}
         >
           <div
             style={{
               backgroundColor: "white",
-              width: "400px",
-              minHeight: "300px",
-              padding: "20px",
-              borderRadius: "8px",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+              width: "420px",
+              padding: "32px",
+              borderRadius: "12px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
               zIndex: 1000,
               display: "flex",
               flexDirection: "column",
-              alignItems: "center",
+              gap: "20px",
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ fontFamily: "Arial, sans-serif" }}>
+            <h2 style={{ 
+              margin: 0,
+              fontSize: "20px",
+              fontWeight: 600,
+              color: "#262626"
+            }}>
               Select Model Type
             </h2>
-            <div style={{ marginBottom: "12px" }}></div>
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              maxHeight: "400px",
+              overflowY: "auto"
+            }}>
             {modelTypes.length > 0 ? (
               modelTypes.map((type, index) => (
                 <button
@@ -84,55 +109,79 @@ export function NewModelCard({ modelTypes = [] }: { modelTypes?: string[] }) {
                     handleCreateSimilarModel(type);
                   }}
                   style={{
-                    display: "block",
-                    margin: "10px 0",
-                    padding: "10px 20px",
-                    backgroundColor: "#2C2803",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
+                    padding: "12px 20px",
+                    backgroundColor: "#fff",
+                    color: "#262626",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "6px",
                     cursor: "pointer",
-                    width: "100%",
-                    fontFamily: "Arial, sans-serif",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    transition: "all 0.3s ease",
+                    textAlign: "left",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#262626";
+                    e.currentTarget.style.backgroundColor = "#fafafa";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#d9d9d9";
+                    e.currentTarget.style.backgroundColor = "#fff";
                   }}
                 >
-                  {capitalize(type)}
+                  Create similar to: {capitalize(type)}
                 </button>
               ))
             ) : (
-              <p>No model types detected</p>
+              <p style={{ 
+                margin: 0,
+                fontSize: "14px",
+                color: "#8c8c8c",
+                textAlign: "center"
+              }}>No model types detected</p>
             )}
+            </div>
             <button
               onClick={() => {
                 setIsModelOpen(false);
                 navigate("/new-model");
               }}
               style={{
-                display: "block",
-                margin: "10px 0",
-                padding: "10px 20px",
-                backgroundColor: "white",
-                border: "2px solid #2C2803",
-                color: "#2C2803",
-                borderRadius: "4px",
+                padding: "12px 20px",
+                backgroundColor: "#262626",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
                 cursor: "pointer",
-                width: "100%",
-                fontFamily: "Arial, sans-serif",
+                fontSize: "14px",
+                fontWeight: 500,
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#434343";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#262626";
               }}
             >
-              New Model
+              Create New Model
             </button>
-            <div style={{ marginTop: "12px" }}></div>
             <button
               onClick={() => setIsModelOpen(false)}
               style={{
                 background: "none",
                 border: "none",
-                color: "black",
+                color: "#8c8c8c",
                 cursor: "pointer",
-                padding: 0,
-                fontSize: "16px",
-                fontFamily: "Arial, sans-serif",
+                padding: "8px",
+                fontSize: "14px",
+                transition: "color 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#262626";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#8c8c8c";
               }}
             >
               Cancel
@@ -141,30 +190,44 @@ export function NewModelCard({ modelTypes = [] }: { modelTypes?: string[] }) {
         </div>
       )}
 
-      <button
-        onClick={() => {
-          setIsModelOpen(true);
-        }}
-        style={{
-          backgroundColor: "#4CAF50",
-          color: "white",
-          border: "none",
-          borderRadius: "50%",
-          width: "64px",
-          height: "64px",
-          fontSize: "32px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-          transition: "transform 0.2s",
-        }}
-        onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-        onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-      >
-        <MdAdd />
-      </button>
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "16px"
+      }}>
+        <div
+          style={{
+            backgroundColor: "#f5f5f5",
+            borderRadius: "50%",
+            width: "80px",
+            height: "80px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "40px",
+            color: "#595959",
+          }}
+        >
+          <MdAdd />
+        </div>
+        <div style={{
+          textAlign: "center"
+        }}>
+          <h3 style={{
+            margin: 0,
+            fontSize: "16px",
+            fontWeight: 600,
+            color: "#262626",
+            marginBottom: "4px"
+          }}>Add New Model</h3>
+          <p style={{
+            margin: 0,
+            fontSize: "13px",
+            color: "#8c8c8c"
+          }}>Click to create a new model</p>
+        </div>
+      </div>
     </div>
   );
 }

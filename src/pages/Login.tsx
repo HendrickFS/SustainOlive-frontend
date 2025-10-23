@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "@fontsource/inter/600.css";
-import { Button, Card, Checkbox, Form, Input, Space, Typography, message, Alert } from "antd";
+import { Button, Card, Checkbox, Form, Input, Space, Typography, message, Alert, Modal } from "antd";
 import { useAuth } from "../contexts/AuthContext";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase/config";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase/config";
 
 import oliveOilImg from "../assets/azeite_app.png";
 import azeiteImg from "../assets/azeite.jpg";
@@ -12,8 +16,48 @@ import ipbLogo from "../assets/ipbLogo.png";
 export function Login() {
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string>("");
+    const [isFirstTimeModal, setIsFirstTimeModal] = useState(false);
+    const [firstTimeEmail, setFirstTimeEmail] = useState("");
+    const [creatingAccount, setCreatingAccount] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
+    const [passwordForm] = Form.useForm();
+
+    const checkIfUserExistsInFirestore = async (email: string): Promise<boolean> => {
+        try {
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("email", "==", email));
+            const querySnapshot = await getDocs(q);
+            return !querySnapshot.empty;
+        } catch (error) {
+            console.error("Error checking user in Firestore:", error);
+            return false;
+        }
+    };
+
+    const handleCreatePassword = async (values: { password: string; confirmPassword: string }) => {
+        setCreatingAccount(true);
+        try {
+            // Create Firebase Auth account
+            await createUserWithEmailAndPassword(auth, firstTimeEmail, values.password);
+            message.success("Account created successfully! Please log in.");
+            setIsFirstTimeModal(false);
+            passwordForm.resetFields();
+            setFirstTimeEmail("");
+        } catch (error: any) {
+            console.error("Error creating account:", error);
+            if (error.code === "auth/email-already-in-use") {
+                message.error("An account with this email already exists. Please try logging in.");
+                setIsFirstTimeModal(false);
+            } else if (error.code === "auth/weak-password") {
+                message.error("Password is too weak. Please use a stronger password.");
+            } else {
+                message.error("Failed to create account. Please try again.");
+            }
+        } finally {
+            setCreatingAccount(false);
+        }
+    };
 
     const onFinish = async (values: { email: string; password: string; remember?: boolean }) => {
         setSubmitting(true);
@@ -27,24 +71,38 @@ export function Login() {
             const errorCode = error?.code;
             let errorMsg = "";
             
-            if (errorCode === "auth/user-not-found") {
-                errorMsg = "No account found with this email address";
-                message.error(errorMsg);
-            } else if (errorCode === "auth/wrong-password" || errorCode === "auth/invalid-credential") {
+            if (errorCode === "auth/user-not-found" || errorCode === "auth/invalid-credential") {
+                // Check if user exists in Firestore (invited by admin)
+                const existsInFirestore = await checkIfUserExistsInFirestore(values.email);
+                
+                if (existsInFirestore) {
+                    // User exists in Firestore but not in Firebase Auth
+                    // This is a first-time user who needs to set their password
+                    setFirstTimeEmail(values.email);
+                    setIsFirstTimeModal(true);
+                    setErrorMessage("");
+                } else {
+                    errorMsg = "No account found with this email address. Please contact your administrator.";
+                    message.error(errorMsg);
+                    setErrorMessage(errorMsg);
+                }
+            } else if (errorCode === "auth/wrong-password") {
                 errorMsg = "Incorrect password. Please try again.";
                 message.error(errorMsg);
+                setErrorMessage(errorMsg);
             } else if (errorCode === "auth/invalid-email") {
                 errorMsg = "Invalid email format";
                 message.error(errorMsg);
+                setErrorMessage(errorMsg);
             } else if (errorCode === "auth/too-many-requests") {
                 errorMsg = "Too many failed attempts. Please try again later.";
                 message.error(errorMsg);
+                setErrorMessage(errorMsg);
             } else {
                 errorMsg = "Login failed. Please check your credentials and try again.";
                 message.error(errorMsg);
+                setErrorMessage(errorMsg);
             }
-            
-            setErrorMessage(errorMsg);
         } finally {
             setSubmitting(false);
         }
@@ -189,6 +247,68 @@ export function Login() {
                     <img src={ipbLogo} alt="IPB Logo" style={{ width: 200, marginTop: "auto", marginBottom: 24 }} />
                 </div>
             </div>
+
+            {/* First-time user password setup modal */}
+            <Modal
+                title="Welcome! Set Your Password"
+                open={isFirstTimeModal}
+                onCancel={() => {
+                    setIsFirstTimeModal(false);
+                    passwordForm.resetFields();
+                    setFirstTimeEmail("");
+                }}
+                footer={null}
+                width={400}
+            >
+                <p style={{ marginBottom: 20 }}>
+                    This is your first time logging in. Please create a password for your account: <strong>{firstTimeEmail}</strong>
+                </p>
+                <Form
+                    form={passwordForm}
+                    layout="vertical"
+                    onFinish={handleCreatePassword}
+                >
+                    <Form.Item
+                        label="Password"
+                        name="password"
+                        rules={[
+                            { required: true, message: "Please input your password" },
+                            { min: 6, message: "Password must be at least 6 characters" },
+                        ]}
+                    >
+                        <Input.Password placeholder="Enter your password" />
+                    </Form.Item>
+                    <Form.Item
+                        label="Confirm Password"
+                        name="confirmPassword"
+                        dependencies={['password']}
+                        rules={[
+                            { required: true, message: "Please confirm your password" },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    if (!value || getFieldValue('password') === value) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(new Error('Passwords do not match!'));
+                                },
+                            }),
+                        ]}
+                    >
+                        <Input.Password placeholder="Confirm your password" />
+                    </Form.Item>
+                    <Form.Item style={{ marginBottom: 0 }}>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            block
+                            loading={creatingAccount}
+                            style={{ backgroundColor: "#4CAF50", borderColor: "#4CAF50" }}
+                        >
+                            Create Password & Login
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Modal>
         </div>
     );
 }

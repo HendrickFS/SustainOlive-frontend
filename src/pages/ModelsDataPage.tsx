@@ -1,5 +1,7 @@
 import { Menu } from "../components/Menu";
+import { PageHeader } from "../components/PageHeader";
 import { ModelsData } from "../components/ModelsData";
+import { DatabaseOutlined } from "@ant-design/icons";
 
 
 export function ModelsDataPage() {
@@ -19,10 +21,17 @@ export function ModelsDataPage() {
             width: "85%",
             height: "100vh",
             overflow: "hidden",
-            backgroundColor: "#dfdfdfff",
+            backgroundColor: "#fff",
           }}
         >
+          <PageHeader
+            title="Models Data"
+            description="View real-time data from your production models."
+            icon={<DatabaseOutlined />}
+          />
+          <div style={{ height: "calc(100vh - 120px)", overflow: "auto" }}>
             <ModelsData />
+          </div>
         </div>
       </div>
     );

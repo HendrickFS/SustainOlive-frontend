@@ -58,10 +58,11 @@ export function ModelsGrid() {
             width: '100%',
             height: '100vh',
             overflow: 'auto',
-            backgroundColor: '#dfdfdfff',
+            padding: '24px 40px',
             display: 'flex',
             flexWrap: 'wrap',
-            flexDirection: 'row',
+            gap: '24px',
+            alignContent: 'flex-start',
         }}>
         {models.map((model, index) => (
             <ModelCard key={model.thingId || index} modelData={model} onDelete={refreshModels} />

@@ -22,11 +22,10 @@ export function ModelInfoPage() {
           width: "85%",
           height: "100vh",
           overflow: "hidden",
-          backgroundColor: "#dfdfdfff",
+          backgroundColor: "#fff",
         }}
       >
         <ModelInfo thingId={thingId!} />
-
       </div>
     </div>
   );

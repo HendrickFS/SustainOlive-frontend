@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Layout, Menu as AntMenu, message } from "antd";
+import { useEffect, useState } from "react";
 import {
   HomeOutlined,
   TableOutlined,
@@ -7,9 +8,13 @@ import {
   FileTextOutlined,
   HistoryOutlined,
   LogoutOutlined,
+  BellOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { useAuth } from "../contexts/AuthContext";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase/config";
 
 import sustainoliveLogo from "../assets/pegada.png";
 import ipbLogo from "../assets/ipbLogo.png";
@@ -22,9 +27,33 @@ type MenuItem = Required<MenuProps>["items"][number];
 export function Menu() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const [userRole, setUserRole] = useState<string>("user");
 
-  const menuItems: MenuItem[] = [
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user?.email) {
+        return;
+      }
+
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          setUserRole(userData.role || "user");
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      }
+    };
+
+    fetchUserRole();
+  }, [user]);
+
+  const baseMenuItems: MenuItem[] = [
     {
       key: "/home",
       icon: <HomeOutlined />,
@@ -50,6 +79,23 @@ export function Menu() {
       icon: <HistoryOutlined />,
       label: "Events",
     },
+    {
+      key: "/alerts-config",
+      icon: <BellOutlined />,
+      label: "Alerts",
+    },
+  ];
+
+  // Add User Management menu item only for admins
+  const menuItems: MenuItem[] = [
+    ...baseMenuItems,
+    ...(userRole === "admin" ? [
+      {
+        key: "/user-management",
+        icon: <TeamOutlined />,
+        label: "Users",
+      },
+    ] : []),
     {
       key: "/logout",
       icon: <LogoutOutlined />,

@@ -1,5 +1,7 @@
 import { DeviceList } from "../components/DeviceList";
 import { Menu } from "../components/Menu";
+import { PageHeader } from "../components/PageHeader";
+import { UnorderedListOutlined } from "@ant-design/icons";
 
 export const DeviceListPage = () => {
   return (
@@ -18,10 +20,17 @@ export const DeviceListPage = () => {
           width: "85%",
           height: "100vh",
           overflow: "hidden",
-          backgroundColor: "#dfdfdfff",
+          backgroundColor: "#fff",
         }}
       >
-        <DeviceList />
+        <PageHeader
+          title="Device List"
+          description="Browse and monitor all your connected production devices."
+          icon={<UnorderedListOutlined />}
+        />
+        <div style={{ height: "calc(100vh - 120px)", overflow: "auto" }}>
+          <DeviceList />
+        </div>
       </div>
     </div>
   );

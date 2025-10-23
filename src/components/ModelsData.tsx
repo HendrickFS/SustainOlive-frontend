@@ -207,7 +207,6 @@ export function ModelsData() {
         width: "100%",
         height: "100vh",
         overflowY: "auto",
-        backgroundColor: "#dfdfdfff",
         padding: "24px",
       }}
     >

@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu } from "../components/Menu";
+import { PageHeader } from "../components/PageHeader";
 import { ModelsGrid } from "../components/ModelsGrid";
+import { AppstoreOutlined } from "@ant-design/icons";
 
 export function Models() {
     return (
@@ -19,9 +21,16 @@ export function Models() {
                     width: '85%',
                     height: '100vh',
                     overflow: 'hidden',
-                    backgroundColor: '#dfdfdfff',
+                    backgroundColor: '#fff',
                 }}>
-                    <ModelsGrid />
+                    <PageHeader
+                      title="Models"
+                      description="Manage and configure your production models and their settings."
+                      icon={<AppstoreOutlined />}
+                    />
+                    <div style={{ height: "calc(100vh - 120px)", overflow: "auto" }}>
+                      <ModelsGrid />
+                    </div>
                 </div>
         </div>
     );
