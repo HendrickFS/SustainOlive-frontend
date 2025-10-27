@@ -13,8 +13,6 @@ import {
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { useAuth } from "../contexts/AuthContext";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../firebase/config";
 
 import sustainoliveLogo from "../assets/pegada.png";
 import ipbLogo from "../assets/ipbLogo.png";
@@ -31,26 +29,12 @@ export function Menu() {
   const [userRole, setUserRole] = useState<string>("user");
 
   useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!user?.email) {
-        return;
-      }
-
-      try {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", user.email));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const userData = querySnapshot.docs[0].data();
-          setUserRole(userData.role || "user");
-        }
-      } catch (error) {
-        console.error("Error fetching user role:", error);
-      }
-    };
-
-    fetchUserRole();
+    // Prefer role from auth context (backend-supplied). Falls back to 'user'.
+    if (user && (user as any).role) {
+      setUserRole((user as any).role);
+    } else {
+      setUserRole('user');
+    }
   }, [user]);
 
   const baseMenuItems: MenuItem[] = [

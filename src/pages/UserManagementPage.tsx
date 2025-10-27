@@ -21,11 +21,12 @@ import {
   MailOutlined,
   TeamOutlined
 } from "@ant-design/icons";
-import { collection, getDocs, doc, setDoc, deleteDoc, addDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { useAuth } from "../contexts/AuthContext";
+import { getAllUsers, saveUserProfileByAdmin, deleteUser } from "../api/usersApi";
 
 interface UserData {
   uid?: string;
+  id?: number;
   email: string;
   name?: string;
   role?: string;
@@ -33,6 +34,7 @@ interface UserData {
 }
 
 export const UserManagementPage = () => {
+  const auth = useAuth();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,25 +49,21 @@ export const UserManagementPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const usersCollection = collection(db, "users");
-      const usersSnapshot = await getDocs(usersCollection);
-      
-      const fetchedUsers: UserData[] = [];
-      usersSnapshot.forEach((doc) => {
-        const data = doc.data();
-        fetchedUsers.push({
-          uid: doc.id,
-          email: data.email || "",
-          name: data.name || "",
-          role: data.role || "user",
-          selectedDevices: data.selectedDevices || [],
-        });
-      });
-      
+      const token = (auth as any).token;
+      if (!token) throw new Error('Not authenticated');
+      const usersList = await getAllUsers(token);
+      const fetchedUsers: UserData[] = usersList.map((u) => ({
+        uid: String(u.id),
+        id: u.id,
+        email: u.email,
+        name: u.displayName ?? u.name ?? '',
+        role: u.role ?? 'user',
+        selectedDevices: u.selectedDevices ?? [],
+      }));
       setUsers(fetchedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
-      message.error("Failed to load users from Firestore");
+      message.error("Failed to load users from API");
     } finally {
       setLoading(false);
     }
@@ -89,7 +87,9 @@ export const UserManagementPage = () => {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      await deleteDoc(doc(db, "users", userId));
+      const token = (auth as any).token;
+      if (!token) throw new Error('Not authenticated');
+      await deleteUser(token, Number(userId));
       message.success("User deleted successfully");
       fetchUsers();
     } catch (error) {
@@ -102,23 +102,26 @@ export const UserManagementPage = () => {
     try {
       const values = await form.validateFields();
       setSaving(true);
+      const token = (auth as any).token;
+      if (!token) throw new Error('Not authenticated');
 
-      if (editingUser && editingUser.uid) {
+      if (editingUser && editingUser.id) {
         // Update existing user
-        const userRef = doc(db, "users", editingUser.uid);
-        await setDoc(userRef, {
+        await saveUserProfileByAdmin(token, {
+          id: editingUser.id,
           email: values.email,
           name: values.name,
           role: values.role,
-        }, { merge: true });
+        });
         message.success("User updated successfully");
       } else {
         // Add new user
-        await addDoc(collection(db, "users"), {
+        await saveUserProfileByAdmin(token, {
           email: values.email,
           name: values.name,
           role: values.role,
           selectedDevices: [],
+          password: values.password ?? '',
         });
         message.success("User added successfully");
       }

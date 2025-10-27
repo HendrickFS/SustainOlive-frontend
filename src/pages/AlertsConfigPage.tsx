@@ -3,15 +3,15 @@ import { Menu } from "../components/Menu";
 import { PageHeader } from "../components/PageHeader";
 import { Card, Button, Modal, Checkbox, message, Spin } from "antd";
 import { BellOutlined, MailOutlined, UserOutlined } from "@ant-design/icons";
-import { collection, getDocs, doc, setDoc, query, where } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { useAuth } from "../contexts/AuthContext";
 import { getModels } from "../api/modelApi";
 import type { Model } from "../api/modelApi";
 import { formatName } from "../utils/formatting";
-import { useAuth } from "../contexts/AuthContext";
+import { getAllUsers, getCurrentUser, saveUserAlertConfig } from "../api/usersApi";
 
 interface UserData {
   uid?: string;
+  id?: number;
   email: string;
   name?: string;
   role?: string;
@@ -24,7 +24,8 @@ interface ModelOption {
 }
 
 export const AlertsConfigPage = () => {
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth.user;
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,61 +62,55 @@ export const AlertsConfigPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      if (!user?.email) {
+  const token = (auth as any)?.token ?? null;
+      if (!token) {
         message.warning("User not logged in");
         setLoading(false);
         return;
       }
 
-      // First, fetch current user's role
-      const currentUserQuery = query(
-        collection(db, "users"),
-        where("email", "==", user.email)
-      );
-      const currentUserSnapshot = await getDocs(currentUserQuery);
-      
-      let userRole = "user";
-      if (!currentUserSnapshot.empty) {
-        const currentUserData = currentUserSnapshot.docs[0].data();
-        userRole = currentUserData.role || "user";
-        setCurrentUserRole(userRole);
+      // Determine current user's role (prefer client value, fallback to API)
+      let role = (user as any)?.role || undefined;
+      if (!role) {
+        try {
+          const me = await getCurrentUser(token);
+          role = me.role || 'user';
+          setCurrentUserRole(role);
+        } catch (err) {
+          role = 'user';
+        }
+      } else {
+        setCurrentUserRole(role);
       }
 
-      // Fetch users based on role
-      let usersCollection;
-      if (userRole === "admin") {
-        // Admins can see all users
-        usersCollection = collection(db, "users");
+      let fetchedUsers: UserData[] = [];
+      if (role === 'admin') {
+        const usersList = await getAllUsers(token);
+        fetchedUsers = usersList.map((u) => ({
+          uid: String(u.id),
+          id: u.id,
+          email: u.email,
+          name: u.displayName ?? u.name ?? '',
+          role: u.role ?? 'user',
+          selectedDevices: u.selectedDevices ?? [],
+        }));
       } else {
-        // Regular users can only see themselves
-        usersCollection = query(
-          collection(db, "users"),
-          where("email", "==", user.email)
-        );
+        const me = await getCurrentUser(token);
+        fetchedUsers = [{
+          uid: String(me.id),
+          id: me.id,
+          email: me.email,
+          name: me.displayName ?? me.name ?? '',
+          role: me.role ?? 'user',
+          selectedDevices: me.selectedDevices ?? [],
+        }];
       }
-      
-      const usersSnapshot = await getDocs(usersCollection);
-      
-      const fetchedUsers: UserData[] = [];
-      usersSnapshot.forEach((doc) => {
-        const data = doc.data();
-        fetchedUsers.push({
-          uid: doc.id,
-          email: data.email || "",
-          name: data.name || "",
-          role: data.role || "user",
-          selectedDevices: data.selectedDevices || [],
-        });
-      });
-      
+
       setUsers(fetchedUsers);
-      
-      if (fetchedUsers.length === 0) {
-        message.info("No users found in the database");
-      }
-    } catch (error) {
+      if (fetchedUsers.length === 0) message.info('No users found');
+      } catch (error) {
       console.error("Error fetching users:", error);
-      message.error("Failed to load users from Firestore");
+      message.error("Failed to load users from API");
     } finally {
       setLoading(false);
     }
@@ -127,7 +122,7 @@ export const AlertsConfigPage = () => {
     setLoadingConfig(true);
     
     try {
-      // Load the user's current selected devices
+      // Use the passed-in selectedDevices
       setSelectedModels(user.selectedDevices || []);
     } catch (error) {
       console.error("Error loading alert config:", error);
@@ -146,25 +141,17 @@ export const AlertsConfigPage = () => {
   };
 
   const handleSaveConfig = async () => {
-    if (!selectedUser || !selectedUser.uid) return;
-    
+    if (!selectedUser || !selectedUser.id) return;
+
     setSavingConfig(true);
     try {
-      // Update the user's selectedDevices in Firestore
-      const userRef = doc(db, "users", selectedUser.uid);
-      await setDoc(userRef, {
-        selectedDevices: selectedModels,
-      }, { merge: true });
-      
+      const token = (auth as any).token;
+      if (!token) throw new Error('Not authenticated');
+      await saveUserAlertConfig(token, selectedUser.id, selectedUser.email, { selectedModels });
+
       message.success(`Alert configuration saved for ${selectedUser.email}`);
-      
-      // Update local state
-      setUsers(users.map(u => 
-        u.uid === selectedUser.uid 
-          ? { ...u, selectedDevices: selectedModels }
-          : u
-      ));
-      
+      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, selectedDevices: selectedModels } : u));
+
       setIsModalOpen(false);
       setSelectedUser(null);
       setSelectedModels([]);
