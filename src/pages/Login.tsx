@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "@fontsource/inter/600.css";
 import { Button, Card, Checkbox, Form, Input, Space, Typography, message, Alert, Modal } from "antd";
 import { useAuth } from "../contexts/AuthContext";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../firebase/config";
+// Firestore removed: no imports from "firebase/firestore" or `db`.
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/config";
 
@@ -23,17 +22,7 @@ export function Login() {
     const { login } = useAuth();
     const [passwordForm] = Form.useForm();
 
-    const checkIfUserExistsInFirestore = async (email: string): Promise<boolean> => {
-        try {
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("email", "==", email));
-            const querySnapshot = await getDocs(q);
-            return !querySnapshot.empty;
-        } catch (error) {
-            console.error("Error checking user in Firestore:", error);
-            return false;
-        }
-    };
+    // Firestore checks removed — not using Firestore anymore.
 
     const handleCreatePassword = async (values: { password: string; confirmPassword: string }) => {
         setCreatingAccount(true);
@@ -72,20 +61,10 @@ export function Login() {
             let errorMsg = "";
             
             if (errorCode === "auth/user-not-found" || errorCode === "auth/invalid-credential") {
-                // Check if user exists in Firestore (invited by admin)
-                const existsInFirestore = await checkIfUserExistsInFirestore(values.email);
-                
-                if (existsInFirestore) {
-                    // User exists in Firestore but not in Firebase Auth
-                    // This is a first-time user who needs to set their password
-                    setFirstTimeEmail(values.email);
-                    setIsFirstTimeModal(true);
-                    setErrorMessage("");
-                } else {
-                    errorMsg = "No account found with this email address. Please contact your administrator.";
-                    message.error(errorMsg);
-                    setErrorMessage(errorMsg);
-                }
+                // No Firestore check available; treat as no account found in Auth
+                errorMsg = "No account found with this email address. Please contact your administrator.";
+                message.error(errorMsg);
+                setErrorMessage(errorMsg);
             } else if (errorCode === "auth/wrong-password") {
                 errorMsg = "Incorrect password. Please try again.";
                 message.error(errorMsg);
