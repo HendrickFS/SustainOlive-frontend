@@ -19,7 +19,9 @@ export interface AlertConfig {
 }
 
 // Vite exposes client env vars via import.meta.env and requires the VITE_ prefix
-const BASE = (import.meta.env.VITE_USER_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/+$/u, '');
+// Default to same-origin so the Vite dev proxy can forward requests to the backend.
+// When deploying to production, set `VITE_USER_API_BASE_URL` to your API host (no trailing slash).
+const BASE = (import.meta.env.VITE_USER_API_BASE_URL ?? '').replace(/\/+$/u, '');
 
 /** Helper to build headers */
 function buildHeaders(token?: string) {
