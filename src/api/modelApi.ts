@@ -87,5 +87,45 @@ export const deleteModel = async (thingId: string) => {
   const response = await api.delete(`/api/2/things/${thingId}`, {
     auth: AUTH,
   });
+
+  // Delete source and target connections
+  const type = thingId.split(":")[0];
+  
+  const deleteSourceConnection = {
+    targetActorSelection: "/system/sharding/connection",
+    headers: {
+      aggregate: false,
+    },
+    piggybackCommand: {
+      type: "connectivity.commands:deleteConnection",
+      connectionId: `mqtt-${type}-source`,
+    },
+  };
+
+  const deleteTargetConnection = {
+    targetActorSelection: "/system/sharding/connection",
+    headers: {
+      aggregate: false,
+      "is-group-topic": false,
+      "ditto-sudo": true,
+    },
+    piggybackCommand: {
+      type: "connectivity.commands:deleteConnection",
+      connectionId: `mqtt-${type}-target`,
+    },
+  };
+
+  try {
+    await api.post("/devops/piggyback/connectivity/", deleteSourceConnection, {
+      auth: DEV_AUTH,
+    });
+    await api.post("/devops/piggyback/connectivity", deleteTargetConnection, {
+      auth: DEV_AUTH,
+    });
+  } catch (error) {
+    console.error("Error deleting connections:", error);
+    // Continue even if connection deletion fails
+  }
+
   return response.data;
 };
