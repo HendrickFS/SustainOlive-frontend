@@ -67,6 +67,11 @@ export function DeviceData({ thingId }: { thingId: string }) {
     fetchHistoricalData();
   }, [model, range]);
 
+  const featureEntries = Object.entries(historicalData) as [
+    string,
+    HistoricalEntry[]
+  ][];
+
   return (
     <div
       style={{
@@ -142,9 +147,6 @@ export function DeviceData({ thingId }: { thingId: string }) {
                 </option>
               ))}
             </select>
-          </div>
-        </div>
-      </div>
       {Object.entries(historicalData).map(([feature, entries]) => (
         <div
           key={feature}
@@ -321,48 +323,50 @@ export function DeviceData({ thingId }: { thingId: string }) {
                       <ReferenceArea 
                         key="critical-high"
                         y1={Math.max(maxThreshold, domainMin)}
-                        y2={domainMax}
-                        fill="red"
-                        fillOpacity={0.1}
-                      />
-                    );
-                  }
-                  
-                  // Red zone below min
-                  if (domainMin < minThreshold) {
-                    areas.push(
-                      <ReferenceArea 
-                        key="critical-low"
-                        y1={domainMin}
-                        y2={Math.min(minThreshold, domainMax)}
-                        fill="red"
-                        fillOpacity={0.1}
-                      />
-                    );
-                  }
-                }
-                
-                return <>{areas}</>;
-              })()}
-              <Tooltip />
-              <CartesianGrid strokeDasharray="3 3" />
-              <Line type="monotone" dataKey="value" stroke="#8884d8" dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "12px",
-              gap: "16px",
-              marginLeft: "24px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <div
-                style={{
-                  width: "20px",
-                  height: "12px",
+                      </LineChart>
+                    </ResponsiveContainer>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                        gap: "16px",
+                        marginLeft: "24px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <div
+                          style={{
+                            width: "20px",
+                            height: "12px",
+                            backgroundColor: "#e6ffe6",
+                            border: "1px solid #ccc",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span style={{ fontSize: "14px", color: "#333" }}>
+                          Non-Critical ({model?.features[feature]?.properties.minValue} -{" "}
+                          {model?.features[feature]?.properties.maxValue})
+                        </span>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <div
+                          style={{
+                            width: "20px",
+                            height: "12px",
+                            backgroundColor: "#ffe5e5",
+                            border: "1px solid #ccc",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span style={{ fontSize: "14px", color: "#333" }}>Critical</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
                   backgroundColor: "#e6ffe6",
                   border: "1px solid #ccc",
                   borderRadius: "2px",
