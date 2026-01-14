@@ -2,7 +2,9 @@ import { getType } from "./formatting";
 
 export function createSourceConnectionPayload(
   thingId: string,
-  features: string[]
+  features: string[],
+  username: string = "sustainolive",
+  password: string = "sustainolive"
 ) {
   const [namespace, id] = thingId.split(":");
   const type = getType(thingId);
@@ -13,14 +15,12 @@ export function createSourceConnectionPayload(
     })
     .join(",");
 
-  const incomingScript = `function mapToDittoProtocolMsg(headers,textPayload,bytePayload,contentType){ const jsonString=String.fromCharCode.apply(null,new Uint8Array(bytePayload)); const jsonData=JSON.parse(jsonString); const thingId=jsonData.thingId.split(':'); const features=[${featureMappings}]; const messages=features.filter(f=>f.key in jsonData).map(f=>Ditto.buildDittoProtocolMsg(thingId[0],thingId[1],'things','twin','commands','modify', \`/features/\${f.name}/properties/value\`,headers,{properties:{value:jsonData[f.key]}})); return messages.length===1?messages[0]:messages; }`;
+  const incomingScript = `function mapToDittoProtocolMsg(headers,textPayload,bytePayload,contentType){try{var jsonData=null; if(bytePayload && bytePayload.length){try{var jsonString=String.fromCharCode.apply(null,new Uint8Array(bytePayload));jsonData=JSON.parse(jsonString);}catch(e){} } if(!jsonData && textPayload){try{jsonData=JSON.parse(textPayload);}catch(e){} } if(!jsonData){console.log('Mapper: payload is not JSON - textPayload=',textPayload); return null;} var thingId=(jsonData.thingId||'').split(':'); if(thingId.length<2){console.log('Mapper: missing or invalid thingId',jsonData.thingId); return null;} var ns=thingId[0], id=thingId[1]; var features=[${featureMappings}]; var now=new Date().toISOString(); var messages=[]; for(var i=0;i<features.length;i++){var f=features[i]; if(Object.prototype.hasOwnProperty.call(jsonData,f.key)){var featureValue=jsonData[f.key]; messages.push(Ditto.buildDittoProtocolMsg(ns,id,'things','twin','commands','modify','/features/'+f.name+'/properties/value',headers,featureValue)); messages.push(Ditto.buildDittoProtocolMsg(ns,id,'things','twin','commands','modify','/features/'+f.name+'/properties/timestamp',headers,now));}} if(messages.length===0){return null;} return messages;}catch(ex){console.log('Mapper exception:',ex);return null;}}`;
 
   return {
     targetActorSelection: "/system/sharding/connection",
     headers: {
       aggregate: false,
-      "is-group-topic": false,
-      "ditto-sudo": true,
     },
     piggybackCommand: {
       type: "connectivity.commands:createConnection",
@@ -29,7 +29,12 @@ export function createSourceConnectionPayload(
         connectionType: "mqtt",
         connectionStatus: "open",
         failoverEnabled: true,
-        uri: "tcp://mosquitto:1884",
+        uri: `tcp://${username}:${password}@mosquitto:1884`,
+        credentials: {
+          type: "plain",
+          username: username,
+          password: password,
+        },
         sources: [
           {
             addresses: [`${type}/incoming/#`],
@@ -42,7 +47,7 @@ export function createSourceConnectionPayload(
           mappingEngine: "JavaScript",
           options: {
             incomingScript: incomingScript.trim(),
-            outgoingScript: `function mapFromDittoProtocolMsg(namespace, id, group, channel, criterion, action, path, dittoHeaders, value, status, extra) {return null;}`,
+            outgoingScript: `function mapFromDittoProtocolMsg(namespace,id,group,channel,criterion,action,path,dittoHeaders,value,status,extra){return null;}`,
             loadBytebufferJS: "false",
             loadLongJS: "false",
           },
