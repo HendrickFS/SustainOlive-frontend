@@ -7,7 +7,7 @@ import { DatabaseOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
-export function DeviceEvents({ thingId }: { thingId: string }) {
+export function DeviceEvents({ thingId, range }: { thingId: string; range: string }) {
   const [model, setModel] = useState<Model | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -69,6 +69,7 @@ export function DeviceEvents({ thingId }: { thingId: string }) {
             model={model}
             featureName={name}
             featureData={featureData}
+            range={range}
           />
         ))}
       </Space>

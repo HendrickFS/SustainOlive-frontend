@@ -76,10 +76,12 @@ export function FeatureEventsTable({
   model,
   featureName,
   featureData,
+  range,
 }: {
   model: Model;
   featureName: string;
   featureData: any;
+  range: string;
 }) {
   const [data, setData] = useState<HistoricalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +93,7 @@ export function FeatureEventsTable({
         const historicalData = await getHistoricalData(
           model.thingId,
           featureName,
-          "-7d"
+          range
         );
         setData(historicalData);
       } catch (error) {
@@ -102,7 +104,7 @@ export function FeatureEventsTable({
     };
 
     fetchData();
-  }, [model, featureName]);
+  }, [model, featureName, range]);
 
   const events = getEvents(data, model, featureName);
 
