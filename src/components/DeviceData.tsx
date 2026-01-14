@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getModel, type Model } from "../api/modelApi";
 import { getHistoricalData } from "../api/historicalApi";
+import { Empty } from "antd";
 import {
   LineChart,
   Line,
@@ -146,10 +147,16 @@ export function DeviceData({ thingId }: { thingId: string }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", width: "100%" }}>
-        {featureEntries.map(([feature, entries], index) => {
-          const isLastOdd = index === featureEntries.length - 1 && featureEntries.length % 2 === 1;
-          return (
+      {(() => {
+        const featuresWithData = featureEntries.filter(([, entries]) => entries.length > 0);
+        const featuresWithoutData = featureEntries.filter(([, entries]) => entries.length === 0).map(([name]) => name);
+
+        return (
+          <>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", width: "100%" }}>
+              {featuresWithData.map(([feature, entries], index) => {
+                const isLastOdd = index === featuresWithData.length - 1 && featuresWithData.length % 2 === 1;
+                return (
             <div
               key={feature}
               style={{
@@ -344,7 +351,30 @@ export function DeviceData({ thingId }: { thingId: string }) {
             </div>
           );
         })}
-      </div>
+            </div>
+            {featuresWithoutData.length > 0 && (
+              <div style={{ width: "100%", marginTop: "24px" }}>
+                {featuresWithoutData.map((featureName) => (
+                  <div
+                    key={featureName}
+                    style={{
+                      marginBottom: "16px",
+                      backgroundColor: "#f9f9f9",
+                      border: "1px solid #eee",
+                      borderRadius: "4px",
+                      padding: "24px",
+                    }}
+                  >
+                    <Empty
+                      description={`No data found for ${formatFeatureName(featureName)} in the specified time`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }
