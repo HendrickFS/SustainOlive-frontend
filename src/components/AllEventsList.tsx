@@ -39,10 +39,11 @@ interface FeatureEventData {
 
 async function fetchHistoricalData(
   model: Model,
-  feature: string
+  feature: string,
+  range: string
 ): Promise<HistoricalEntry[]> {
   try {
-    const historicalData = await getHistoricalData(model.thingId, feature, "-7d");
+    const historicalData = await getHistoricalData(model.thingId, feature, range);
     return historicalData;
   } catch (error) {
     console.error("Error fetching historical data:", error);
@@ -97,7 +98,7 @@ function getLastEvent(
   };
 }
 
-export function AllEventsList() {
+export function AllEventsList({ range }: { range: string }) {
   const [models, setModels] = useState<Model[]>([]);
   const [modelEvents, setModelEvents] = useState<
     Record<string, FeatureEventData[]>
@@ -119,7 +120,7 @@ export function AllEventsList() {
         const featureEvents: FeatureEventData[] = [];
         
         for (const [featureName, featureData] of Object.entries(model.features)) {
-          const historicalData = await fetchHistoricalData(model, featureName);
+          const historicalData = await fetchHistoricalData(model, featureName, range);
           const event = getLastEvent(historicalData, model, featureName);
           
           const backgroundColor = !event.error
@@ -175,7 +176,7 @@ export function AllEventsList() {
     };
 
     fetchModelsAndEvents();
-  }, []);
+  }, [range]);
 
   const getTableColumns = (): ColumnsType<FeatureEventData> => [
     {
