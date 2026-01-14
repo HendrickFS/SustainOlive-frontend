@@ -11,7 +11,8 @@ export function createSourceConnectionPayload(
 
   const featureMappings = features
     .map((f) => {
-      return `{key:'${f}',name:'${f}'}`;
+      const lowercase = f.toLowerCase();
+      return `{key:'${lowercase}',name:'${lowercase}'}`;
     })
     .join(",");
 
@@ -59,7 +60,9 @@ export function createSourceConnectionPayload(
 
 export function createTargetConnectionPayload(
   thingId: string,
-  features: string[]
+  features: string[],
+  username: string = "sustainolive",
+  password: string = "sustainolive"
 ) {
   const [namespace, id] = thingId.split(":");
   const type = getType(thingId);
@@ -84,7 +87,7 @@ export function createTargetConnectionPayload(
         connectionType: "mqtt",
         connectionStatus: "open",
         failoverEnabled: true,
-        uri: "tcp://mosquitto:9002",
+        uri: `tcp://${username}:${password}@mosquitto:9002`,
         targets: [
           {
             address: `${type}.notifications/{{ thing:id }}`,
