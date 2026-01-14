@@ -14,7 +14,138 @@ import {
 import { formatFeatureName, formatName } from "../utils/formatting";
 
 interface HistoricalEntry {
+  time: string;
+  value: number;
+}
+
+interface HistoricalData {
+  [feature: string]: HistoricalEntry[];
+}
+
+const ranges = ["-1h", "-6h", "-12h", "-24h", "-7d", "-30d"];
+
+export function DeviceData({ thingId }: { thingId: string }) {
+  const [model, setModel] = useState<Model | null>(null);
+  const [historicalData, setHistoricalData] = useState<HistoricalData>({});
+  const [range, setRange] = useState<string>("-24h");
+
+  useEffect(() => {
+    const fetchModel = async () => {
+      const data = await getModel(thingId);
+      setModel(data);
+    };
+    fetchModel();
+  }, [thingId]);
+
+  useEffect(() => {
+    const fetchHistoricalDataByRange = async () => {
+      if (!model) return;
+
+      try {
+        const featurePromises = Object.entries(model.features).map(
+          async ([featureName]) => {
+            const data = await getHistoricalData(
+              model.thingId,
+              featureName,
+              range
+            );
+            return { featureName, data };
+          }
+        );
+        const results = await Promise.all(featurePromises);
+        const dataByFeature: Record<string, any> = {};
+        results.forEach(({ featureName, data }) => {
+          dataByFeature[featureName] = data;
+        });
+        setHistoricalData(dataByFeature);
+      } catch (err) {
+        console.error("Error:", err);
+      }
+    };
+    fetchHistoricalDataByRange();
+  }, [model, range]);
+
+  const featureEntries = Object.entries(historicalData) as [string, HistoricalEntry[]][];
+
+  return (
+    <div
+      style={{
+        padding: "16px",
+        maxWidth: "100%",
+        height: "100vh",
+        overflowY: "auto",
+        margin: "0 auto",
+        fontFamily: "Arial, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "start",
+      }}
+    >
+      <div
+        style={{
+          marginBottom: "24px",
+          width: "100%",
+          padding: "16px",
+          backgroundColor: "#f9f9f9",
+          borderLeft: "4px solid #2C2803",
+          border: "1px solid #e0e0e0",
+          borderRadius: "8px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "8px",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <h2
+              style={{ margin: "0 0 8px 0", fontSize: "20px", color: "#333" }}
+            >
+              {formatName(thingId)}
+            </h2>
+            <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
+              <strong>Thing ID:</strong> {thingId}
+            </p>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <label
+              htmlFor="timeRange"
+              style={{ fontSize: "14px", fontWeight: "500", color: "#374151" }}
+            >
+              Time Range
+            </label>
+            <select
+              id="timeRange"
+              name="timeRange"
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+              style={{
+                borderRadius: "5px",
+                border: "1px solid #d1d5db",
+                backgroundColor: "#ffffff",
+                padding: "8px 12px",
+                fontSize: "14px",
+                color: "#374151",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                outline: "none",
+                transition: "all 0.2s ease",
+              }}
+            >
+              {ranges.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", width: "100%" }}>
         {featureEntries.map(([feature, entries], index) => {
           const isLastOdd = index === featureEntries.length - 1 && featureEntries.length % 2 === 1;
@@ -131,7 +262,7 @@ interface HistoricalEntry {
                       }
                     }
 
-                    const areas: JSX.Element[] = [];
+                    const areas: any[] = [];
                     if (dataAlwaysBelowMin) {
                       areas.push(
                         <ReferenceArea key="critical-low" y1={domainMin} y2={domainMax} fill="red" fillOpacity={0.1} />
@@ -214,140 +345,6 @@ interface HistoricalEntry {
           );
         })}
       </div>
-                if (dataAlwaysBelowMin) {
-                  // Data always below minimum - force include threshold with buffer
-                  domainMax = Math.max(domainMax, minThreshold + Math.abs(minThreshold - actualDataMax) * 0.1);
-                } else if (dataAlwaysAboveMax) {
-                  // Data always above maximum - force include threshold with buffer
-                  domainMin = Math.min(domainMin, maxThreshold - Math.abs(actualDataMin - maxThreshold) * 0.1);
-                } else {
-                  // Data crosses or is near thresholds - extend domain if close
-                  if (actualDataMin <= minThreshold + dataRange * 0.2) {
-                    domainMin = Math.min(domainMin, minThreshold - Math.abs(minThreshold) * 0.05);
-                  }
-                  if (actualDataMax >= maxThreshold - dataRange * 0.2) {
-                    domainMax = Math.max(domainMax, maxThreshold + Math.abs(maxThreshold) * 0.05);
-                  }
-                }
-                
-                // Determine which zones to show based on data position
-                const areas = [];
-                
-                // If data is always below minimum threshold - show red background
-                if (dataAlwaysBelowMin) {
-                  areas.push(
-                    <ReferenceArea key="critical-low" y1={domainMin} y2={domainMax} fill="red" fillOpacity={0.1} />
-                  );
-                  // Show green zone boundary if threshold is visible
-                  if (domainMax > minThreshold) {
-                    areas.push(
-                      <ReferenceArea key="safe-indicator" y1={minThreshold} y2={domainMax} fill="green" fillOpacity={0.1} />
-                    );
-                  }
-                }
-                // If data is always above maximum threshold - show red background  
-                else if (dataAlwaysAboveMax) {
-                  areas.push(
-                    <ReferenceArea key="critical-high" y1={domainMin} y2={domainMax} fill="red" fillOpacity={0.1} />
-                  );
-                  // Show green zone boundary if threshold is visible
-                  if (domainMin < maxThreshold) {
-                    areas.push(
-                      <ReferenceArea key="safe-indicator" y1={domainMin} y2={maxThreshold} fill="green" fillOpacity={0.1} />
-                    );
-                  }
-                }
-                // Normal case - show zones based on thresholds
-                else {
-                  // Green zone between thresholds
-                  if (domainMax > minThreshold && domainMin < maxThreshold) {
-                    areas.push(
-                      <ReferenceArea 
-                        key="safe-zone"
-                        y1={Math.max(minThreshold, domainMin)}
-                        y2={Math.min(maxThreshold, domainMax)}
-                        fill="green"
-                        fillOpacity={0.1}
-                      />
-                    );
-                  }
-                  
-                  // Red zone above max
-                  if (domainMax > maxThreshold) {
-                    areas.push(
-                      <ReferenceArea 
-                        key="critical-high"
-                        y1={Math.max(maxThreshold, domainMin)}
-                      </LineChart>
-                    </ResponsiveContainer>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: "12px",
-                        gap: "16px",
-                        marginLeft: "24px",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                        <div
-                          style={{
-                            width: "20px",
-                            height: "12px",
-                            backgroundColor: "#e6ffe6",
-                            border: "1px solid #ccc",
-                            borderRadius: "2px",
-                          }}
-                        ></div>
-                        <span style={{ fontSize: "14px", color: "#333" }}>
-                          Non-Critical ({model?.features[feature]?.properties.minValue} -{" "}
-                          {model?.features[feature]?.properties.maxValue})
-                        </span>
-                      </div>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                        <div
-                          style={{
-                            width: "20px",
-                            height: "12px",
-                            backgroundColor: "#ffe5e5",
-                            border: "1px solid #ccc",
-                            borderRadius: "2px",
-                          }}
-                        ></div>
-                        <span style={{ fontSize: "14px", color: "#333" }}>Critical</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-                  backgroundColor: "#e6ffe6",
-                  border: "1px solid #ccc",
-                  borderRadius: "2px",
-                }}
-              ></div>
-              <span style={{ fontSize: "14px", color: "#333" }}>
-                Non-Critical ({model?.features[feature]?.properties.minValue} -{" "}
-                {model?.features[feature]?.properties.maxValue})
-              </span>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <div
-                style={{
-                  width: "20px",
-                  height: "12px",
-                  backgroundColor: "#ffe5e5",
-                  border: "1px solid #ccc",
-                  borderRadius: "2px",
-                }}
-              ></div>
-              <span style={{ fontSize: "14px", color: "#333" }}>Critical</span>
-            </div>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
