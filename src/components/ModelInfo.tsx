@@ -214,7 +214,7 @@ export function ModelInfo({ thingId }: ModelInfoProps) {
                       fontFamily: "monospace",
                     }}
                   >
-                    <code>{getType(thingId)}/incoming/{thingId}</code>
+                    <code>{getType(thingId)}/incoming/{thingId.split(':')[1]}</code>
                   </pre>
                 </div>
 
