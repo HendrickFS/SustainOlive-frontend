@@ -51,44 +51,6 @@ const convertToAnomalies = (data: AnomalyDataPoint[], feature: string): Anomaly[
     });
 };
 
-// Mock data generator (fallback)
-const generateMockData = (): DataPoint[] => {
-  const data: DataPoint[] = [];
-  const now = Date.now();
-  
-  for (let i = 0; i < 288; i++) { // 288 points = 24 hours at 5-min intervals
-    const timestamp = now - (287 - i) * 5 * 60 * 1000;
-    let value = 20 + Math.sin(i / 48) * 5 + Math.random() * 2;
-    
-    // Add some anomalies
-    const isAnomaly = Math.random() < 0.05; // 5% chance of anomaly
-    if (isAnomaly) {
-      value = value + (Math.random() < 0.5 ? 10 : -10);
-    }
-    
-    data.push({
-      timestamp,
-      value: Math.round(value * 100) / 100,
-      isAnomaly,
-    });
-  }
-  
-  return data;
-};
-
-const generateMockAnomalies = (data: DataPoint[]): Anomaly[] => {
-  return data
-    .filter(point => point.isAnomaly)
-    .map((point, idx) => ({
-      id: `anomaly_${idx}`,
-      timestamp: point.timestamp,
-      value: point.value,
-      feature: "Temperature",
-      severity: Math.random() < 0.5 ? "medium" : "high",
-      description: `Unexpected temperature spike detected`,
-    }));
-};
-
 export function AnomalyDetectionFeature() {
   const [selectedDevice, setSelectedDevice] = useState<string>("device_001");
   const [selectedFeature, setSelectedFeature] = useState<string>("Temperature");
@@ -137,20 +99,20 @@ export function AnomalyDetectionFeature() {
     if (anomalyData) {
       return convertAnomalyDataToChartData(anomalyData);
     }
-    return generateMockData();
+    return [];
   }, [anomalyData]);
 
   const anomalies = useMemo(() => {
     if (anomalyData) {
       return convertToAnomalies(anomalyData, selectedFeature);
     }
-    return generateMockAnomalies(chartData);
-  }, [anomalyData, selectedFeature, chartData]);
+    return [];
+  }, [anomalyData, selectedFeature]);
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const values = chartData.map(d => d.value);
-    const anomalyCount = chartData.filter(d => d.isAnomaly).length;
+    const values = chartData.map((d: DataPoint) => d.value);
+    const anomalyCount = chartData.filter((d: DataPoint) => d.isAnomaly).length;
     
     return {
       current: values[values.length - 1],
@@ -158,7 +120,7 @@ export function AnomalyDetectionFeature() {
       totalAnomalies: anomalyCount,
       min: Math.min(...values),
       max: Math.max(...values),
-      avg: (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2),
+      avg: (values.reduce((a: number, b: number) => a + b, 0) / values.length).toFixed(2),
     };
   }, [chartData]);
 

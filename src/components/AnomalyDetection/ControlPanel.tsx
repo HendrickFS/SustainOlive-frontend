@@ -1,4 +1,6 @@
 import { Select, Row, Col, Card } from "antd";
+import { useState, useEffect } from "react";
+import { getModels, type Model } from "../../api/modelApi";
 
 interface ControlPanelProps {
   selectedDevice: string;
@@ -17,20 +19,65 @@ export function ControlPanel({
   onFeatureChange,
   onTimeRangeChange,
 }: ControlPanelProps) {
-  // TODO: Fetch devices from backend API
-  const devices = [
-    { value: "device_001", label: "Device 001 - Greenhouse A" },
-    { value: "device_002", label: "Device 002 - Greenhouse B" },
-    { value: "device_003", label: "Device 003 - Outdoor Plot" },
-  ];
+  const [devices, setDevices] = useState<{ value: string; label: string }[]>([]);
+  const [features, setFeatures] = useState<{ value: string; label: string }[]>([]);
+  const [loadingDevices, setLoadingDevices] = useState(true);
+  const [loadingFeatures, setLoadingFeatures] = useState(false);
 
-  // TODO: Fetch features from backend API based on selected device
-  const features = [
-    { value: "Temperature", label: "Temperature (°C)" },
-    { value: "Humidity", label: "Humidity (%)" },
-    { value: "Soil Moisture", label: "Soil Moisture (m³/m³)" },
-    { value: "Light Intensity", label: "Light Intensity (lux)" },
-  ];
+  // Fetch devices on mount
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const models = await getModels();
+        const deviceOptions = models.map((model: Model) => ({
+          value: model.thingId,
+          label: model.thingId,
+        }));
+        setDevices(deviceOptions);
+        // Set first device as default if not already set
+        if (deviceOptions.length > 0 && !selectedDevice) {
+          onDeviceChange(deviceOptions[0].value);
+        }
+      } catch (error) {
+        console.error("Failed to fetch devices:", error);
+      } finally {
+        setLoadingDevices(false);
+      }
+    };
+    fetchDevices();
+  }, []);
+
+  // Fetch features when device changes
+  useEffect(() => {
+    const fetchFeatures = async () => {
+      if (!selectedDevice) return;
+      
+      setLoadingFeatures(true);
+      try {
+        const models = await getModels();
+        const selectedModel = models.find((m: Model) => m.thingId === selectedDevice);
+        
+        if (selectedModel && selectedModel.features) {
+          const featureOptions = Object.keys(selectedModel.features).map(
+            (featureName: string) => ({
+              value: featureName,
+              label: featureName,
+            })
+          );
+          setFeatures(featureOptions);
+          // Set first feature as default if not already set
+          if (featureOptions.length > 0 && !selectedFeature) {
+            onFeatureChange(featureOptions[0].value);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch features:", error);
+      } finally {
+        setLoadingFeatures(false);
+      }
+    };
+    fetchFeatures();
+  }, [selectedDevice]);
 
   const timeRanges = [
     { value: "1h", label: "Last 1 Hour" },
@@ -59,6 +106,8 @@ export function ControlPanel({
             onChange={onDeviceChange}
             options={devices}
             placeholder="Select a device"
+            loading={loadingDevices}
+            disabled={loadingDevices}
           />
         </Col>
 
@@ -72,6 +121,8 @@ export function ControlPanel({
             onChange={onFeatureChange}
             options={features}
             placeholder="Select a feature"
+            loading={loadingFeatures}
+            disabled={loadingFeatures || features.length === 0}
           />
         </Col>
 
