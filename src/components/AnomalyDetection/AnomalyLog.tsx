@@ -97,36 +97,6 @@ export function AnomalyLog({ anomalies }: AnomalyLogProps) {
         <span style={{ fontSize: "13px", color: "#666" }}>{description}</span>
       ),
     },
-    {
-      title: "Actions",
-      key: "actions",
-      width: "11%",
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="text"
-            size="small"
-            icon={<DownloadOutlined />}
-            title="Export anomaly details"
-            onClick={() => {
-              // TODO: Implement export functionality
-              console.log("Export anomaly:", record.id);
-            }}
-          />
-          <Button
-            type="text"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            title="Mark as reviewed"
-            onClick={() => {
-              // TODO: Implement mark as reviewed / delete anomaly
-              console.log("Delete/Review anomaly:", record.id);
-            }}
-          />
-        </Space>
-      ),
-    },
   ];
 
   const dataSource = useMemo(
@@ -150,15 +120,6 @@ export function AnomalyLog({ anomalies }: AnomalyLogProps) {
             }}
           >
             Export
-          </Button>
-          <Button
-            danger
-            onClick={() => {
-              // TODO: Implement clear all anomalies
-              console.log("Clear all anomalies");
-            }}
-          >
-            Clear All
           </Button>
         </Space>
       }

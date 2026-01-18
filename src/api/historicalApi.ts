@@ -41,7 +41,7 @@ export const checkAnomaly = async (
   const response = await historicalApi.get("/ml/anomaly", {
     params: {
       thingId,
-      feature: feature.toLowerCase(),
+      feature: feature.charAt(0).toLowerCase() + feature.slice(1),
       range_start: options?.range_start || "-1h",
       training_range: options?.training_range || "-24h",
       latest: options?.latest ?? false,
