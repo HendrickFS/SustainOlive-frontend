@@ -1,8 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ControlPanel } from "./ControlPanel";
 import { SummaryCards } from "./SummaryCards";
 import { AnomalyChart } from "./AnomalyChart";
 import { AnomalyLog } from "./AnomalyLog";
+import { checkAnomaly, type AnomalyDataPoint } from "../../api/historicalApi";
+import { Spin, message } from "antd";
 
 // Mock data interface
 interface DataPoint {
@@ -20,7 +22,36 @@ interface Anomaly {
   description: string;
 }
 
-// Mock data generator
+// Convert API response to DataPoint format
+const convertAnomalyDataToChartData = (data: AnomalyDataPoint[]): DataPoint[] => {
+  return data.map(point => ({
+    timestamp: new Date(point.time).getTime(),
+    value: point.value,
+    isAnomaly: point.anomaly,
+  }));
+};
+
+// Convert anomaly data to Anomaly format
+const convertToAnomalies = (data: AnomalyDataPoint[], feature: string): Anomaly[] => {
+  return data
+    .filter(point => point.anomaly)
+    .map((point, idx) => {
+      // Calculate severity based on anomaly score (lower score = more anomalous)
+      const severity: "low" | "medium" | "high" = 
+        point.score < 0.3 ? "high" : point.score < 0.6 ? "medium" : "low";
+      
+      return {
+        id: `anomaly_${idx}`,
+        timestamp: new Date(point.time).getTime(),
+        value: point.value,
+        feature,
+        severity,
+        description: `Anomaly detected in ${feature}: value ${point.value} (score: ${point.score.toFixed(2)})`,
+      };
+    });
+};
+
+// Mock data generator (fallback)
 const generateMockData = (): DataPoint[] => {
   const data: DataPoint[] = [];
   const now = Date.now();
@@ -62,15 +93,64 @@ export function AnomalyDetectionFeature() {
   const [selectedDevice, setSelectedDevice] = useState<string>("device_001");
   const [selectedFeature, setSelectedFeature] = useState<string>("Temperature");
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("24h");
+  const [loading, setLoading] = useState(false);
+  const [anomalyData, setAnomalyData] = useState<AnomalyDataPoint[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data
-  const mockData = useMemo(() => generateMockData(), []);
-  const mockAnomalies = useMemo(() => generateMockAnomalies(mockData), [mockData]);
+  // Fetch anomaly data from API
+  useEffect(() => {
+    const fetchAnomalies = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const rangeMap: { [key: string]: string } = {
+          "1h": "-1h",
+          "6h": "-6h",
+          "24h": "-24h",
+          "7d": "-7d",
+        };
+        
+        const response = await checkAnomaly(selectedDevice, selectedFeature, {
+          range_start: rangeMap[selectedTimeRange] || "-24h",
+          training_range: "-24h",
+          latest: false,
+          dedup: true,
+        });
+        
+        setAnomalyData(response.data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch anomaly data";
+        setError(errorMessage);
+        message.error(`Failed to fetch anomaly data: ${errorMessage}`);
+        // Fall back to mock data
+        setAnomalyData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnomalies();
+  }, [selectedDevice, selectedFeature, selectedTimeRange]);
+
+  // Use API data if available, otherwise use mock data
+  const chartData = useMemo(() => {
+    if (anomalyData) {
+      return convertAnomalyDataToChartData(anomalyData);
+    }
+    return generateMockData();
+  }, [anomalyData]);
+
+  const anomalies = useMemo(() => {
+    if (anomalyData) {
+      return convertToAnomalies(anomalyData, selectedFeature);
+    }
+    return generateMockAnomalies(chartData);
+  }, [anomalyData, selectedFeature, chartData]);
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const values = mockData.map(d => d.value);
-    const anomalyCount = mockData.filter(d => d.isAnomaly).length;
+    const values = chartData.map(d => d.value);
+    const anomalyCount = chartData.filter(d => d.isAnomaly).length;
     
     return {
       current: values[values.length - 1],
@@ -80,7 +160,7 @@ export function AnomalyDetectionFeature() {
       max: Math.max(...values),
       avg: (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2),
     };
-  }, [mockData]);
+  }, [chartData]);
 
   return (
     <div>
@@ -93,22 +173,26 @@ export function AnomalyDetectionFeature() {
         onTimeRangeChange={setSelectedTimeRange}
       />
 
-      <SummaryCards
-        status={stats.status}
-        totalAnomalies={stats.totalAnomalies}
-        minValue={stats.min}
-        maxValue={stats.max}
-        avgValue={parseFloat(stats.avg)}
-        currentValue={stats.current}
-      />
+      <Spin spinning={loading} tip="Analyzing anomalies...">
+        {error && <div style={{ color: "red", padding: "16px" }}>Error: {error}</div>}
+        
+        <SummaryCards
+          status={stats.status}
+          totalAnomalies={stats.totalAnomalies}
+          minValue={stats.min}
+          maxValue={stats.max}
+          avgValue={parseFloat(stats.avg)}
+          currentValue={stats.current}
+        />
 
-      <AnomalyChart
-        data={mockData}
-        anomalies={mockAnomalies}
-        feature={selectedFeature}
-      />
+        <AnomalyChart
+          data={chartData}
+          anomalies={anomalies}
+          feature={selectedFeature}
+        />
 
-      <AnomalyLog anomalies={mockAnomalies} />
+        <AnomalyLog anomalies={anomalies} />
+      </Spin>
     </div>
   );
 }
