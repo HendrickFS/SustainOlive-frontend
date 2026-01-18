@@ -102,10 +102,10 @@ export function ControlPanel({
           </div>
           <Select
             style={{ width: "100%" }}
-            value={selectedDevice}
+            value={selectedDevice || undefined}
             onChange={onDeviceChange}
             options={devices}
-            placeholder="Select a device"
+            placeholder="Select device"
             loading={loadingDevices}
             disabled={loadingDevices}
           />

@@ -35,7 +35,9 @@ interface AnomalyChartProps {
 
 const formatTimestamp = (timestamp: number) => {
   const date = new Date(timestamp);
-  return date.toLocaleTimeString("en-US", {
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -86,7 +88,7 @@ export function AnomalyChart({ data, anomalies, feature }: AnomalyChartProps) {
             }}
           >
             <strong>Value:</strong> {data.value.toFixed(2)} {feature === "Temperature" ? "°C" : ""}
-            {data.isAnomaly && " ⚠️ ANOMALY"}
+            {data.isAnomaly && " ANOMALY"}
           </p>
         </div>
       );
@@ -149,7 +151,7 @@ export function AnomalyChart({ data, anomalies, feature }: AnomalyChartProps) {
 
       <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#fafafa", borderRadius: "4px" }}>
         <p style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#666" }}>
-          📊 <strong>Chart Information:</strong>
+          <strong>Chart Information:</strong>
         </p>
         <p style={{ margin: "0 0 4px 0", fontSize: "12px", color: "#666" }}>
           • Blue line represents the normal sensor data trend

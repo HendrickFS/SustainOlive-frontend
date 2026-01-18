@@ -41,6 +41,47 @@ export function AnomalyLog({ anomalies }: AnomalyLogProps) {
     }
   };
 
+  const handleExportCSV = () => {
+    // Create CSV header
+    const headers = ["Timestamp", "Feature", "Value", "Severity", "Description"];
+    
+    // Create CSV rows
+    const rows = anomalies.map(anomaly => [
+      formatTimestamp(anomaly.timestamp),
+      anomaly.feature,
+      anomaly.value.toFixed(2),
+      anomaly.severity.toUpperCase(),
+      anomaly.description,
+    ]);
+    
+    // Escape CSV values (handle quotes and commas)
+    const escapeCSVValue = (value: string) => {
+      if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+    
+    // Build CSV content
+    const csvContent = [
+      headers.map(escapeCSVValue).join(","),
+      ...rows.map(row => row.map(cell => escapeCSVValue(String(cell))).join(",")),
+    ].join("\n");
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `anomalies_${new Date().getTime()}.csv`);
+    link.style.visibility = "hidden";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const columns: TableColumnsType<Anomaly> = [
     {
       title: "Timestamp",
@@ -114,12 +155,12 @@ export function AnomalyLog({ anomalies }: AnomalyLogProps) {
       extra={
         <Space>
           <Button
-            onClick={() => {
-              // TODO: Implement export to CSV
-              console.log("Export all anomalies to CSV");
-            }}
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleExportCSV}
+            disabled={anomalies.length === 0}
           >
-            Export
+            Export CSV
           </Button>
         </Space>
       }
