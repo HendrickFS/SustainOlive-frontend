@@ -10,6 +10,7 @@ import {
   LogoutOutlined,
   BellOutlined,
   TeamOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { useAuth } from "../contexts/AuthContext";
@@ -67,6 +68,11 @@ export function Menu() {
       key: "/alerts-config",
       icon: <BellOutlined />,
       label: "Alerts",
+    },
+    {
+      key: "/ai-dashboard",
+      icon: <ThunderboltOutlined />,
+      label: "AI Dashboard",
     },
   ];
 

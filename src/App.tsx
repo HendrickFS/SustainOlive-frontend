@@ -14,6 +14,7 @@ import { DeviceDataPage } from './pages/DeviceDataPage';
 import { DeviceEventsPage } from './pages/DeviceEventsPage';
 import { AlertsConfigPage } from './pages/AlertsConfigPage';
 import { UserManagementPage } from './pages/UserManagementPage';
+import { AIDashboardPage } from './pages/AIDashboardPage';
 import { PrivateRoute } from './components/PrivateRoute';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
         <Route path="/device-events/:thingId" element={<PrivateRoute><DeviceEventsPage /></PrivateRoute>} />
         <Route path="/alerts-config" element={<PrivateRoute><AlertsConfigPage /></PrivateRoute>} />
         <Route path="/user-management" element={<PrivateRoute><UserManagementPage /></PrivateRoute>} />
+        <Route path="/ai-dashboard" element={<PrivateRoute><AIDashboardPage /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   )
