@@ -17,7 +17,7 @@ function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const available3DModels = ["deposit"];
+const available3DModels = ["deposit", "mixer", "mill", "decanter", "centrifuge", "bin"];
 
 function getModelPath(thingId: string): string {
   const name = getType(thingId);
@@ -69,6 +69,12 @@ interface Feature {
 export function ModelInfo({ thingId }: ModelInfoProps) {
   useGLTF.preload("/questionMarkModel/scene.gltf");
   useGLTF.preload("/deposits/deposit.gltf");
+  useGLTF.preload("/mixers/mixer.gltf");
+  useGLTF.preload("/mills/mill.gltf");
+  useGLTF.preload("/decanter/decanter.gltf");
+  useGLTF.preload("/centrifuges/centrifuge.gltf");
+  useGLTF.preload("/bins/bin.gltf");
+
 
   const [modelType, setModelType] = React.useState(
     getType(thingId) || ""
