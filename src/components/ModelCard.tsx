@@ -60,7 +60,7 @@ interface ModelCardProps {
   onDelete: () => void;
 }
 
-const available3DModels = ['deposit'];
+const available3DModels = ['deposit', 'mixer', 'mill', 'decanter', 'centrifuge', 'bin'];
 
 function getModelPath(thingId: string): string {
   const name = getType(thingId);
